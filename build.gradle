@@ -1,31 +1,51 @@
 buildscript {
     ext {
+        artemis_version = "2.6.2"
+        corbeans_version = '0.22'
         corda_release_group = 'net.corda'
         corda_release_version = '4.0'
-        corda_gradle_plugins_version = '4.0.42'
+        corda_gradle_plugins_version = '4.0.40'
+        // used for cordapp.info
+        corda_platform_version = '4'
+        dependency_management_version ='1.0.6.RELEASE'
+        hibernate_version = '5.3.6.Final'
+        jackson_version = '2.9.5'
+        jcabi_manifests_version = '1.1'
+        junitVersion = '5.1.1'
+        junit_version = '5.1.1'
         kotlin_version = '1.2.71'
-        junit_version = '4.12'
+        kotlinx_coroutines_version = '0.30.2'
         quasar_version = '0.7.10'
-        spring_boot_version = '2.0.2.RELEASE'
-        spring_boot_gradle_plugin_version = '2.0.2.RELEASE'
+        scrudbeans_version = '0.13'
+        spring_boot_version = '2.1.1.RELEASE'
+        springfox_version = '2.9.2'
+        partiture_version = '0.5'
         slf4j_version = '1.7.25'
         log4j_version = '2.11.2'
-        corda_platform_version = '4'
     }
 
     repositories {
         mavenLocal()
         mavenCentral()
         jcenter()
-        maven { url 'https://ci-artifactory.corda.r3cev.com/artifactory/corda' }    
+        maven { url 'https://ci-artifactory.corda.r3cev.com/artifactory/corda' }
     }
 
     dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath "net.corda.plugins:cordapp:$corda_gradle_plugins_version"
-        classpath "net.corda.plugins:cordformation:$corda_gradle_plugins_version"
+        classpath "net.corda.plugins:publish-utils:$corda_gradle_plugins_version"
         classpath "net.corda.plugins:quasar-utils:$corda_gradle_plugins_version"
-        classpath "org.springframework.boot:spring-boot-gradle-plugin:$spring_boot_gradle_plugin_version"
+        classpath "net.corda.plugins:cordformation:$corda_gradle_plugins_version"
+        classpath "net.corda.plugins:cordapp:$corda_gradle_plugins_version"
+        classpath "net.corda.plugins:api-scanner:$corda_gradle_plugins_version"
+
+        // spring plugins
+        classpath "org.springframework.boot:spring-boot-gradle-plugin:$spring_boot_version"
+        classpath "io.spring.gradle:dependency-management-plugin:$dependency_management_version"
+
+        // kotlin plugins
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "org.jetbrains.kotlin:kotlin-allopen:$kotlin_version"
+        classpath "org.jetbrains.kotlin:kotlin-noarg:$kotlin_version"
     }
 }
 
@@ -85,29 +105,24 @@ dependencies {
 
 cordapp {
     info {
-        name "CorDapp Template"
-        vendor "Corda Open Source"
+        name "Camila CLM"
+        vendor "Dapps Incorporated"
         targetPlatformVersion corda_platform_version.toInteger()
         minimumPlatformVersion corda_platform_version.toInteger()
     }
 }
 
-task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
-    nodeDefaults {
-        projectCordapp {
-            deploy = false
-        }
-        cordapp project(':contracts')
-        cordapp project(':workflows')
-    }
+task deployNodes(type: net.corda.plugins.Cordform, dependsOn: [':server:jar']) {
+    directory "./build/nodes"
     node {
         name "O=Notary,L=London,C=GB"
-        notary = [validating : false]
+        notary = [validating : true]
         p2pPort 10002
         rpcSettings {
             address("localhost:10003")
             adminAddress("localhost:10043")
         }
+        //cordapps = []
     }
     node {
         name "O=PartyA,L=London,C=GB"
@@ -116,7 +131,11 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
             address("localhost:10006")
             adminAddress("localhost:10046")
         }
+        cordapps = []
         rpcUsers = [[ user: "user1", "password": "test", "permissions": ["ALL"]]]
+        // Automatically run at least a single, multi-node Spring Boot instance
+        webPort 8080
+        webserverJar = "${rootProject.projectDir}/server/build/libs/server-${project.version}.jar"
     }
     node {
         name "O=PartyB,L=New York,C=US"
@@ -125,13 +144,23 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
             address("localhost:10009")
             adminAddress("localhost:10049")
         }
+        // Uncomment the following two lines to automatically launch a separate Spring Boot webserver per node
+        //webPort 10010
+        //webserverJar = "${rootProject.projectDir}/server/build/libs/server-${project.version}.jar"
+        //cordapps = []
         rpcUsers = [[ user: "user1", "password": "test", "permissions": ["ALL"]]]
     }
-}
-
-task installQuasar(type: Copy) {
-    destinationDir rootProject.file("lib")
-    from(configurations.quasar) {
-        rename 'quasar-core(.*).jar', 'quasar.jar'
+    node {
+        name "O=PartyC,L=San Francisco,C=US"
+        p2pPort 10011
+        rpcSettings {
+            address("localhost:10012")
+            adminAddress("localhost:10052")
+        }
+        // Uncomment the following two lines to automatically launch a separate Spring Boot webserver per node
+        //webPort 10010
+        //webserverJar = "${rootProject.projectDir}/server/build/libs/server-${project.version}.jar"
+        //cordapps = []
+        rpcUsers = [[ user: "user1", "password": "test", "permissions": ["ALL"]]]
     }
 }

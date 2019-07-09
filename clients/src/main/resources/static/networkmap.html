@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html ng-app="MyApp">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Network Map</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css">
+
+    <link rel="stylesheet" type="text/css" href="/assets/styles/salesforce-lightning-design-system.css" />
+
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.6/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.6/angular-route.js"></script>
+
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+    <script src="https://www.gstatic.com/firebasejs/5.8.0/firebase.js"></script>
+
+
+    <style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height: 100%;
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+                  .slds-context-bar {
+                display: -ms-flexbox;
+                display: flex;
+                height: 2.5rem;
+                background-color: white;
+                border-bottom: #DA1A21;
+                color: #080707;
+                position: relative;
+                padding: 0 0 0 1.5rem;
+            }
+
+      #bottom_scrollview {
+        position: absolute;
+        padding-left: 20px;
+        padding-right: 20px;
+        bottom: 0px;
+        left: 0px;
+        right: 0px;
+        height: 0px;
+        overflow: scroll;
+        background-color: gray;
+        opacity: 0.5;
+      }
+      #inner_scroll {
+        height: 100%;
+        width: 300%;
+        display: flex;
+        flex-direction: row;
+        position: relative;
+      }
+    </style>
+
+    <script>
+	var myApp = angular.module('MyApp',[]);
+    function MyController($scope,$timeout){
+	}
+	myApp.controller('MyController', MyController);
+	axios.defaults.headers.post['Content-Type'] = 'application/json';
+        axios.defaults.headers.post['Authorization'] = 'Negotiate';
+
+        var HTTPUtil = function(instanceConfig){
+            var self = this;
+
+
+            self.put = function(config){
+                var _url = config.url ? config.url : (instanceConfig && instanceConfig.url ? instanceConfig.url : defaulsConfig.url);
+                var _data = config.data;
+
+                return  axios.put(_url,_data);
+            }
+
+             self.get = function(config){
+                var _url = config.url ? config.url : (instanceConfig && instanceConfig.url ? instanceConfig.url : defaulsConfig.url);
+                var _data = config.data;
+
+                return  axios.get(_url,_data);
+            }
+
+                          self.post = function(config){
+                var _url = config.url ? config.url : (instanceConfig && instanceConfig.url ? instanceConfig.url : defaulsConfig.url);
+                var _data = config.data;
+
+                return  axios.post(_url,_data);
+            }
+
+
+        }
+
+        var httpInstance = new HTTPUtil();
+
+      function getParameterByName(name, url) {
+        if (!url) url = window.location.href;
+        name = name.replace(/[\[\]]/g, "\\$&");
+
+        var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+            results = regex.exec(url);
+        if (!results) return null;
+        if (!results[2]) return '';
+
+        return decodeURIComponent(results[2].replace(/\+/g, " "));
+      }
+
+
+      var points = [];
+
+
+      var url = new URL('https://maps.googleapis.com/maps/api/geocode/json');
+      var API_KEY = 'AIzaSyDykId3k_x8d-5TtPUbVLYbTpfa1NVSM7w'; // switch to custom protected metadata type
+
+      async function lookupLatLong(location){
+          let params = {
+          address: `${location.city}`,
+          key: API_KEY,
+          region: location.country.toLowerCase()
+        }
+
+
+      url.search = new URLSearchParams(params);
+
+      const response = await fetch(url);
+        let status = await response.status;
+        if(status === 200) {
+            let locations = await response.json();
+        return locations.results[0].geometry.location;
+        }
+        else {
+        return response.statusText;
+        }
+    }
+
+
+    async function nodesLatLong(uniqueLocations){
+
+        const locMap = new Map();
+
+        for(let i in uniqueLocations){
+        let tempLatLong = await lookupLatLong(uniqueLocations[i]);
+            locMap.set(
+        `${uniqueLocations[i].city}${uniqueLocations[i].country}`,
+        {
+            lat: tempLatLong.lat,
+            lng: tempLatLong.lng
+        }
+       )
+     }
+    return locMap;
+}
+
+      var map;
+
+      function populateMap() {
+        var lineSymbol = {
+          path: 'M 0,-1 0,1',
+          strokeColor: '#FF0000',
+          strokeOpacity: 1,
+          scale: 4
+        };
+        points.forEach((p, index) => {
+          var uluru = {lat: p.lat, lng: p.lng};
+          var marker = new google.maps.Marker({
+            position: uluru,
+            animation: google.maps.Animation.DROP,
+            map: map
+          });
+          var innerScroll = document.getElementById('inner_scroll')
+          var addedBox = document.createElement('div')
+          addedBox.style.height = '80%';
+          addedBox.style.width = '200px';
+          addedBox.style.marginLeft = '20px';
+          addedBox.style.marginRight = '20px';
+          addedBox.style.marginTop = '10px';
+          addedBox.style.borderWidth = '2px';
+          addedBox.style.borderColor = 'red';
+          addedBox.style.borderStyle = 'solid';
+          //innerScroll.appendChild(addedBox)
+          if (index > 0) {
+            p1 = {lat: points[index - 1].lat, lng: points[index - 1].lng}
+            p2 = {lat: p.lat, lng: p.lng}
+            var line = new google.maps.Polyline({
+              path: [p1, p2],
+              strokeOpacity: 0,
+              icons: [{
+                icon: lineSymbol,
+                offset: '0',
+                repeat: '20px'
+              }],
+              map: map
+            });
+          }
+        })
+        var theScrollView = document.getElementById('bottom_scrollview')
+        theScrollView.style.height = '400px'
+      }
+
+
+  function getNodes() {
+
+    return new Promise((resolve,reject)=>{
+        var getNodesPromise = httpInstance.get(
+            {
+                url: 'http://dsoa.network:8080/admin/api/nodes',
+                dataType: 'json',
+                method: 'GET'
+            }
+
+            );
+
+            getNodesPromise.then(function(result){
+				console.log('result:'+result);
+                if (result.status == 200) {
+                   resolve(result.data);
+                } else if (event.type === 'exception') {
+                   resolve(undefined)
+                } else {
+                   resolve(undefined)
+                }
+			})
+
+      });
+      }
+      var mapOptions = {
+          center: {lat: 41.7749, lng: 2.17},
+          zoom: 3,
+          maxZoom: 10,
+          minZoom: 2,
+          streetViewControl: false,
+          mapTypeControl: false,
+          styles: [
+            {elementType: 'geometry', stylers: [{color: '#242f3e'}]},
+            {elementType: 'labels.text.stroke', stylers: [{color: '#242f3e'}]},
+            {elementType: 'labels.text.fill', stylers: [{color: '#746855'}]},
+            {
+              featureType: 'administrative.locality',
+              elementType: 'labels.text.fill',
+              stylers: [{color: '#d59563'}]
+            },
+            {
+              featureType: 'poi',
+              elementType: 'labels.text.fill',
+              stylers: [{color: '#d59563'}]
+            },
+            {
+              featureType: 'poi.park',
+              elementType: 'geometry',
+              stylers: [{color: '#263c3f'}]
+            },
+            {
+              featureType: 'poi.park',
+              elementType: 'labels.text.fill',
+              stylers: [{color: '#6b9a76'}]
+            },
+            {
+              featureType: 'road',
+              elementType: 'geometry',
+              stylers: [{color: '#38414e'}]
+            },
+            {
+              featureType: 'road',
+              elementType: 'geometry.stroke',
+              stylers: [{color: '#212a37'}]
+            },
+            {
+              featureType: 'road',
+              elementType: 'labels.text.fill',
+              stylers: [{color: '#9ca5b3'}]
+            },
+            {
+              featureType: 'road.highway',
+              elementType: 'geometry',
+              stylers: [{color: '#746855'}]
+            },
+            {
+              featureType: 'road.highway',
+              elementType: 'geometry.stroke',
+              stylers: [{color: '#1f2835'}]
+            },
+            {
+              featureType: 'road.highway',
+              elementType: 'labels.text.fill',
+              stylers: [{color: '#f3d19c'}]
+            },
+            {
+              featureType: 'transit',
+              elementType: 'geometry',
+              stylers: [{color: '#2f3948'}]
+            },
+            {
+              featureType: 'transit.station',
+              elementType: 'labels.text.fill',
+              stylers: [{color: '#d59563'}]
+            },
+            {
+              featureType: 'water',
+              elementType: 'geometry',
+              stylers: [{color: '#061C3F'}]
+            },
+            {
+              featureType: 'water',
+              elementType: 'labels.text.fill',
+              stylers: [{color: '#515c6d'}]
+            },
+            {
+              featureType: 'water',
+              elementType: 'labels.text.stroke',
+              stylers: [{color: '#17263c'}]
+            }
+          ]
+        };
+      function initMap() {
+        map = new google.maps.Map(document.getElementById('map'), mapOptions);
+        var addedCityMap = {};
+        getNodes().then((nodes)=>{
+            var count = 1;
+            for(var node of nodes){
+                var nodeKey = node.nodeKey;
+                var parties = node.parties[0];
+                var partyName = parties.name;
+                var partyKey = parties.key;
+                var addresses = node.addresses[0];
+                var host = addresses.host;
+                var port = addresses.port;
+                var partyName = parties.name.split(', ')[0].split('=')[1];
+                var partyLocation = parties.name.split(', ')[1].split('=')[1];
+                var partyCountry = parties.name.split(', ')[2].split('=')[1];
+
+                addMarker(partyLocation, '<b>Node Key :</b>'+nodeKey + '<br>'+ '<b>Organisation:</b>'+partyName+ '<br>'+ '<b>Location:</b>'+partyLocation+'<br><b>Country:</b>'+partyCountry,count,addedCityMap[partyLocation]);
+                count++;
+                addedCityMap[partyLocation] = true;
+            }
+        });
+
+        var addMarker = function(address, tooltip,count,exist){
+
+            var geocoder = new google.maps.Geocoder();
+
+              geocoder.geocode({
+                  'address': address
+                }, function(results, status) {
+                  if (status == google.maps.GeocoderStatus.OK) {
+                    if (status != google.maps.GeocoderStatus.ZERO_RESULTS) {
+                      map.setCenter(results[0].geometry.location);
+
+                      var infowindow = new google.maps.InfoWindow({
+                        content: tooltip,
+                        size: new google.maps.Size(499, 50)
+                      });
+
+                      var marker = new google.maps.Marker({
+                        position:new google.maps.LatLng( results[0].geometry.location.lat() + (exist?0.01:0), results[0].geometry.location.lng() + (exist?0.01:0)),// results[0].geometry.location,
+                        map: map,
+                        title: address,
+                        icon : 'http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld='+count+'|FE6256|000000'
+                      });
+                      google.maps.event.addListener(marker, 'click', function() {
+                        infowindow.open(map, marker);
+                      });
+
+                    } else {
+                      alert("No results found");
+                    }
+                  } else {
+                    alert("Geocode was not successful for the following reason: " + status);
+                  }
+                });
+        }
+
+
+        // setTimeout(() => {
+        //   populateMap()
+        //  }, 1000)
+      }
+    </script>
+
+</head>
+<div>
+    <header class="slds-global-header_container">
+        <div class="slds-global-header slds-grid slds-grid_align-spread">
+            <div class="slds-global-header__item">
+
+            </div>
+            <div class="slds-global-header__item slds-global-header__item_search">
+                <div class="slds-form-element">
+                    <label class="slds-form-element__label" for="combobox-id-1"></label>
+                    <div class="slds-form-element__control">
+                        <div class="slds-combobox_container">
+                            <div class="slds-combobox slds-dropdown-trigger slds-dropdown-trigger_click" aria-expanded="false" aria-haspopup="listbox" role="combobox">
+                                <div style="width:500px; padding-bottom:17px" class="slds-combobox__form-element slds-input-has-icon slds-input-has-icon_right" role="none">
+                                    <input type="text" class="slds-input slds-combobox__input" style="color: #061C3F" id="combobox-id-1" aria-autocomplete="list" aria-controls="listbox-id-1" autocomplete="off" role="textbox" placeholder="" />
+                                    <span class="slds-icon_container slds-icon-utility-search slds-input__icon slds-input__icon_right">
+              <svg class="slds-icon slds-icon slds-icon_x-small slds-icon-text-default" aria-hidden="true">
+                <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/assets/icons/utility-sprite/svg/symbols.svg#search" />
+              </svg>
+            </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="slds-global-header__item">
+                <ul class="slds-global-actions">
+                    <li class="slds-global-actions__item">
+                        <div class="slds-global-actions__favorites slds-dropdown-trigger slds-dropdown-trigger_click">
+                            <div class="slds-button-group">
+                                <button class="slds-button slds-button_icon slds-global-actions__favorites-action slds-button_icon slds-button_icon-border slds-button_icon-small" aria-pressed="false" title="Toggle Favorites">
+                                    <span class="slds-assistive-text">Toggle Favorite</span>
+                                </button>
+                                <button class="slds-button slds-button_icon slds-global-actions__favorites-more slds-button_icon slds-button_icon-border slds-button_icon-small" title="View Favorites">
+                                    <span class="slds-assistive-text">View Favorites</span>
+                                </button>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="slds-global-actions__item">
+                        <div class="slds-dropdown-trigger slds-dropdown-trigger_click">
+                            <button class="slds-button slds-button_icon slds-button_icon slds-button_icon-container slds-button_icon-small slds-global-actions__task slds-global-actions__item-action" aria-haspopup="true" title="Global Actions">
+                                <svg class="slds-button__icon" aria-hidden="true">
+                                    <use xlink:href="/assets/icons/utility-sprite/svg/symbols.svg#add"></use>
+                                </svg>
+                                <span class="slds-assistive-text">Global Actions</span>
+                            </button>
+                        </div>
+                    </li>
+                    <li class="slds-global-actions__item">
+                        <div class="slds-dropdown-trigger slds-dropdown-trigger_click">
+                            <button class="slds-button slds-button_icon slds-button_icon slds-button_icon-container slds-button_icon-small slds-global-actions__help slds-global-actions__item-action" aria-haspopup="true" title="Help and Training">
+                                <span class="slds-assistive-text">Help and Training</span>
+                            </button>
+                        </div>
+                    </li>
+                    <li class="slds-global-actions__item">
+                        <div class="slds-dropdown-trigger slds-dropdown-trigger_click">
+                            <button class="slds-button slds-button_icon slds-button_icon slds-button_icon-container slds-button_icon-small slds-global-actions__setup slds-global-actions__item-action" aria-haspopup="true" title="Setup">
+                                <span class="slds-assistive-text">Setup</span>
+                            </button>
+                        </div>
+                    </li>
+                    <li class="slds-global-actions__item">
+                        <div class="slds-dropdown-trigger slds-dropdown-trigger_click">
+                            <button class="slds-button slds-button_icon slds-button_icon slds-button_icon-container slds-button_icon-small slds-global-actions__notifications slds-global-actions__item-action" title="no new notifications" aria-live="assertive" aria-atomic="true">
+                                <svg class="slds-button__icon slds-global-header__icon" aria-hidden="true">
+                                    <use xlink:href="/assets/icons/utility-sprite/svg/symbols.svg#notification"></use>
+                                </svg>
+                                <span class="slds-assistive-text">no new notifications</span>
+                            </button>
+                            <span aria-hidden="true" class="slds-notification-badge">0</span>
+                        </div>
+                    </li>
+                    <li class="slds-global-actions__item">
+                        <div class="slds-dropdown-trigger slds-dropdown-trigger_click">
+                            <button class="slds-button slds-global-actions__avatar slds-global-actions__item-action" title="person name" aria-haspopup="true">
+              <span class="slds-avatar slds-avatar_circle slds-avatar_medium">
+                <img alt="Person name" src="/assets/images/avatar1.jpg" title="User avatar" />
+              </span>
+                            </button>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </header>
+
+    <br/>
+    <br/>
+    <br/>
+
+    <div class="slds-context-bar">
+        <div class="slds-context-bar__primary">
+            <div class="slds-context-bar__item slds-context-bar__dropdown-trigger slds-dropdown-trigger slds-dropdown-trigger_click slds-no-hover">
+                <div class="slds-context-bar__icon-action">
+                    <button class="slds-button slds-icon-waffle_container slds-context-bar__button" title="Description of the icon when needed">
+                                <span class="slds-icon-waffle">
+                                    <span class="slds-r1"></span>
+                                    <span class="slds-r2"></span>
+                                    <span class="slds-r3"></span>
+                                    <span class="slds-r4"></span>
+                                    <span class="slds-r5"></span>
+                                    <span class="slds-r6"></span>
+                                    <span class="slds-r7"></span>
+                                    <span class="slds-r8"></span>
+                                    <span class="slds-r9"></span>
+                                </span>
+                        <span class="slds-assistive-text">Open App Launcher</span>
+                    </button>
+                </div>
+                <span class="slds-context-bar__label-action slds-context-bar__app-name">
+          <span class="slds-truncate" title="App Name">Carmen CRM</span>
+        </span>
+            </div>
+        </div>
+        <nav class="slds-context-bar__secondary" role="navigation">
+            <ul class="slds-grid">
+                <li class="slds-context-bar__item">
+                    <a href="/index.html" class="slds-context-bar__label-action" title="Home">
+                        <span class="slds-assistive-text">Current Page:</span>
+                        <span class="slds-truncate" title="Home">Home</span>
+                    </a>
+                </li>
+                <li class="slds-context-bar__item">
+                    <a href="/baton.html" class="slds-context-bar__label-action" title="Menu Item">
+                        <span class="slds-truncate" title="Network Map">Baton</span>
+                    </a>
+                </li>
+                <li class="slds-context-bar__item">
+                    <a href="/cases.html" class="slds-context-bar__label-action" title="Menu Item">
+                        <span class="slds-truncate" title="Network Map">Cases</span>
+                    </a>
+                </li>
+                <li class="slds-context-bar__item">
+                    <a href="/networkmap.html" class="slds-context-bar__label-action" title="Menu Item">
+                        <span class="slds-truncate" title="Network Map">Network Map</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    <br/>
+    <div class="slds-map_container">
+        <div class="slds-page-header" style="background-color: #F7F6F3">
+            <div class="slds-media">
+                <div class="slds-media__figure">
+      <span class="slds-icon_container slds-icon-action-refresh slds-icon_container--circle" title="DSOA Network Map">
+        <svg class="slds-icon" aria-hidden="true">
+          <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/assets/icons/custom-sprite/svg/symbols.svg#custom57"></use>
+        </svg>
+      </span>
+                </div>
+                <div class="slds-media__body">
+                    <h1 class="slds-page-header__title slds-truncate slds-align-middle" title="Smart Contract Deployer">Network Map</h1>
+                    <br/>
+                    <p><strong>Compatibility Zone:   </strong> 000028
+                        <br/>
+                        <strong>Business Network Operator:   </strong> Dapps Inc.
+                        <br/>
+                    </p>
+                </div>
+            </div>
+            <label class="slds-form-element__label" for="combobox-id-1"></label>
+            <div class="slds-form-element__control" style="width:428px">
+                <div class="slds-combobox_container">
+                    <div class="slds-combobox slds-dropdown-trigger slds-dropdown-trigger_click" aria-expanded="false" aria-haspopup="listbox" role="combobox">
+                        <div class="slds-combobox__form-element slds-input-has-icon slds-input-has-icon_right" role="none">
+                            <input type="text" class="slds-input slds-combobox__input" id="combobox-id-1" aria-autocomplete="list" aria-controls="listbox-id-1" autocomplete="off" role="textbox" placeholder="Search Network Map.." />
+                            <span class="slds-icon_container slds-icon-utility-search slds-input__icon slds-input__icon_right">
+              <svg class="slds-icon slds-icon slds-icon_x-small slds-icon-text-default" aria-hidden="true">
+                <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/assets/icons/utility-sprite/svg/symbols.svg#search" />
+              </svg>
+            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="map" style="width:100%;height:728px"></div>
+    <div id="bottom_scrollview">
+    </div>
+</div>
+</div>
+</body>
+<script async = "defer" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDykId3k_x8d-5TtPUbVLYbTpfa1NVSM7w&callback=initMap" type="text/javascript"></script>
+</html>

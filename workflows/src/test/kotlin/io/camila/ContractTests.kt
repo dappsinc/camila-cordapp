@@ -1,4 +1,4 @@
-package com.template
+package io.camila
 
 import net.corda.testing.node.MockServices
 import org.junit.Test

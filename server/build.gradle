@@ -9,6 +9,7 @@ configurations {
 }
 apply plugin: 'kotlin-spring'
 apply plugin: 'org.springframework.boot'
+apply plugin: 'net.corda.plugins.cordapp'
 
 springBoot {
     buildInfo()
@@ -24,8 +25,8 @@ bootJar {
 }
 dependencies {
     // Our cordapp bits
-    compile project(":workflows")
-    compile project(":contracts")
+    cordapp project(":workflows")
+    cordapp project(":contracts")
     // Spring Boot
     compile("org.springframework.boot:spring-boot-starter:$spring_boot_version")
     compile("org.springframework.boot:spring-boot-starter-web:$spring_boot_version")

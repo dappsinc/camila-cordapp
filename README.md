@@ -52,7 +52,7 @@ Add the following to the `node.conf` file:
 
 `compatibilityZoneUrl="http://dapps.network:8080"`
 
-This is the current network map and doorman server URL for the DSOA Testnet
+This is the current network map and doorman server URL
 
 1) Remove Existing Network Parameters and Certificates
 

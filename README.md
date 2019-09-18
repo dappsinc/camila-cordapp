@@ -101,3 +101,98 @@ and then just click `Connect to DSOA` at the bottom and you will be redirected t
 - Vault SQL Database: PostgreSQL
 - Cloud Service Provider: GCP
 - JVM or Kubernetes (Docker)
+
+### CLM Network States
+
+Agreement States are transferred between party and counterparty on the network.
+
+#### Agreements
+
+```jsx
+
+// *********
+// * Agreement State *
+// *********
+
+data class Agreement(val agreementNumber: String,
+                     val agreementName: String,
+                     val agreementStatus: AgreementStatus,
+                     val agreementType: AgreementType,
+                     val totalAgreementValue: Int,
+                     val party: Party,
+                     val counterparty: Party,
+                     val agreementStartDate: Date,
+                     val agreementEndDate: Date,
+                     val active: Boolean,
+                     val createdAt: Instant,
+                     val lastUpdated: Instant,
+                     override val linearId: UniqueIdentifier = UniqueIdentifier()) 
+
+
+```
+
+The Agreement has the following business `flows` that can be called:
+
+- `CreateAgreement` - Create an Agreement between your organization and a known counterparty on the DSOA
+- `ActivateAgreement` - Activate the Agreement between your organization and a counterparty on the DSOA
+- `TerminateAgreement` - Terminate an existing or active agreement
+- `RenewAgreement` - Renew an existing agreement that is or is about to expire
+- `ExpireAgreement` - Expire a currently active agreement between you and a counterparty
+
+The `Agreement Status` and `Agreement Type` enums are listed as follows:
+
+```jsx
+
+
+@CordaSerializable
+enum class AgreementStatus {
+    REQUEST, APPROVAL_REQUIRED, APPROVED, IN_REVIEW, ACTIVATED, INEFFECT, REJECTED, RENEWED, TERMINATED, AMENDED, SUPERSEDED, EXPIRED
+}
+
+@CordaSerializable
+enum class AgreementType {
+    NDA, MSA, SLA, SOW
+}
+
+
+```
+
+
+Roadmap:
+
+The Junction State of the Agreement and the Line Item is the Agreement Line Item. 
+
+In order to cope with the increased complexity that multiple state types introduce, we can use the concepts of high cohesion and low coupling.
+
+The `Agreement` and the `Agreement Line Item` are bounded together by Command to that the creation of the states via a transaction occure simultaneously as well as a StateRef in the child state property.
+
+
+The `Agreement Line Item` state is as follows:
+
+
+```jsx
+
+// ****************************
+// * Agreement Line Item State *
+// ****************************
+
+
+
+data class AgreementLineItem (val agreement: Agreement,
+                              val agreementNumber: String,
+                              val agreementLineItemName: String,
+                              val agreementLineItemStatus: AgreementLineItemStatus,
+                              val agreementLineItemValue: Int,
+                              val party: Party,
+                              val counterparty: Party,
+                              val lineItem: LineItem,
+                              val active: Boolean,
+                              val createdAt: String,
+                              val lastUpdated: String,
+                              override val linearId: UniqueIdentifier = UniqueIdentifier()) : LinearState, ContractState {
+
+    override val participants: List<AbstractParty> get() = listOf(party, counterparty)
+
+}
+
+```

@@ -9,7 +9,7 @@ Camila is a Contract Lifecycle Management (CLM) network for inter-firm process a
 
 ```bash
 
-git clone https://gitlab.com/dappsinc/camila-cordapp
+git clone https://github.com/dappsinc/camila-cordapp
 
 ```
 

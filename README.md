@@ -50,7 +50,7 @@ To change the name of your `organisation` or any other parameters, edit the `nod
 
 Add the following to the `node.conf` file:
 
-`compatibilityZoneUrl="http://dsoa.network:8080"`
+`compatibilityZoneUrl="http://dapps.network:8080"`
 
 This is the current network map and doorman server URL for the DSOA Testnet
 

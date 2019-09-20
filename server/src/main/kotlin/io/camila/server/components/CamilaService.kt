@@ -26,6 +26,7 @@ import net.corda.core.identity.Party
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.utilities.getOrThrow
 import org.slf4j.LoggerFactory
+import java.util.*
 
 
 class CamilaService(
@@ -55,14 +56,14 @@ class CamilaService(
     }
 
 
-    /** Create an Agreeement! */
-    fun createAgreement(agreementNumber: String, agreementName: String, agreementHash: String, agreementStatus: AgreementStatus, agreementType: AgreementType, totalAgreementValue: Int, counterpartyName: String): SignedTransaction {
+    /** Create an Agreement! */
+    fun createAgreement(agreementNumber: String, agreementName: String, agreementHash: String, agreementStatus: AgreementStatus, agreementType: AgreementType, totalAgreementValue: Int, counterpartyName: String, agreementStartDate: String, agreementEndDate: String): SignedTransaction {
         val proxy = this.nodeRpcConnection.proxy
 
         val matches = proxy.partiesFromName(counterpartyName, exactMatch = true)
-        logger.debug("createAccount, peers: {}", this.peers())
-        logger.debug("createAccount, peer names: {}", this.peerNames())
-        logger.debug("createAccount, target: {}, matches: {}", counterpartyName, matches)
+        logger.debug("createAgreement, peers: {}", this.peers())
+        logger.debug("createAgreement, peer names: {}", this.peerNames())
+        logger.debug("createAgreement, target: {}, matches: {}", counterpartyName, matches)
 
         val counterpartyName: Party = when {
             matches.isEmpty() -> throw IllegalArgumentException("Target string \"$counterpartyName\" doesn't match any nodes on the network.")
@@ -70,7 +71,7 @@ class CamilaService(
             else -> matches.single()
         }
         // Start the flow, block and wait for the response.
-        return proxy.startFlowDynamic(CreateAgreementFlow.Initiator::class.java, agreementNumber, agreementName, agreementHash, agreementStatus,agreementType, totalAgreementValue, counterpartyName).returnValue.getOrThrow()
+        return proxy.startFlowDynamic(CreateAgreementFlow.Initiator::class.java, agreementNumber, agreementName, agreementHash, agreementStatus,agreementType, totalAgreementValue, agreementStartDate, agreementEndDate, counterpartyName).returnValue.getOrThrow()
     }
 
 

@@ -1,5 +1,5 @@
 /**
- *   Copyright 2019, Dapps Incorporated.
+ *   Copyright 2020, Dapps Incorporated.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -20,14 +20,19 @@ import net.corda.core.contracts.*
 import net.corda.core.contracts.Requirements.using
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.Party
+import net.corda.core.schemas.MappedSchema
+import net.corda.core.schemas.PersistentState
+import net.corda.core.schemas.QueryableState
 import net.corda.core.serialization.CordaSerializable
 import net.corda.core.transactions.LedgerTransaction
 import java.lang.IllegalArgumentException
+import java.util.*
 
 // *****************
 // * Agreement State *
 // *****************
 
+@CordaSerializable
 @BelongsToContract(AgreementContract::class)
 data class Agreement(val agreementNumber: String,
                      val agreementName: String,
@@ -37,63 +42,17 @@ data class Agreement(val agreementNumber: String,
                      val totalAgreementValue: Int,
                      val party: Party,
                      val counterparty: Party,
-        //val agreementStartDate: String,
-        //val agreementEndDate: String,
+                     val agreementStartDate: String,
+                     val agreementEndDate: String,
         //val agreementLineItem: AgreementLineItem,
         //val attachmentId: SecureHash.SHA256,
         //val active: Boolean,
         //val createdAt: String,
         //val lastUpdated: String,
-                     override val linearId: UniqueIdentifier = UniqueIdentifier()) : LinearState, ContractState {
+                     override val linearId: UniqueIdentifier = UniqueIdentifier()) : LinearState {
 
     override val participants: List<AbstractParty> get() = listOf(party, counterparty)
 
-    constructor(
-            agreementNumber: String,
-            agreementName: String,
-            agreementHash: String,
-            agreementStatus: AgreementStatus,
-            agreementType: AgreementType,
-            totalAgreementValue: Int,
-            party: Party,
-            counterparty: Party,
-            //agreementStartDate: String,
-            //agreementEndDate: String,
-            //agreementLineItem: AgreementLineItem,
-            //attachmentId: SecureHash.SHA256,
-            //active: Boolean,
-            //createdAt: String,
-            //lastUpdated: String,
-            linearId: String
-    ) :  // this(agreementNumber, agreementName, agreementStatus, agreementType, totalAgreementValue, party, counterparty, agreementStartDate, agreementEndDate, agreementLineItem, attachmentId,  active, createdAt, lastUpdated, UniqueIdentifier(linearId))
-            this(agreementNumber, agreementName, agreementHash, agreementStatus, agreementType, totalAgreementValue, party, counterparty, UniqueIdentifier(linearId))
-    /**
-    override fun generatedMappedObject(schema: MappedSchema): PersistentState {
-    return when (schema) {
-    is AgreementSchemaV1 -> AgreementSchemaV1.PersistentAgreement(
-    agreementNumber = agreementNumber,
-    agreementName = agreementName,
-    agreementStatus = agreementStatus.toString(),
-    agreementType = agreementType.toString(),
-    totalAgreementValue = totalAgreementValue.toString(),
-    party = party.name.toString(),
-    counterparty = counterparty.name.toString(),
-    agreementStartDate = agreementStartDate.toString(),
-    agreementEndDate = agreementEndDate.toString(),
-    active = active.toString(),
-    createdAt = createdAt.toString(),
-    lastUpdated = lastUpdated.toString(),
-    linearId = linearId.id.toString(),
-    externalID = linearId.id.toString()
-    )
-    else -> throw IllegalArgumentException("Unrecognized schema $schema")
-    }
-    }
-
-    override fun supportedSchemas(): Iterable<MappedSchema> = listOf(AgreementSchemaV1)
-    }
-
-     */
 }
 
 @CordaSerializable
@@ -118,7 +77,6 @@ enum class AgreementType {
 class AgreementContract : Contract {
     // This is used to identify our contract when building a transaction
     companion object {
-        @JvmStatic
         val AGREEMENT_CONTRACT_ID = AgreementContract::class.java.canonicalName
     }
 

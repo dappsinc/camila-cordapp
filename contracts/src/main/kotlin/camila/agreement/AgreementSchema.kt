@@ -18,70 +18,66 @@ package io.camila.agreement
 
 import net.corda.core.schemas.MappedSchema
 import net.corda.core.schemas.PersistentState
+import java.util.*
 import javax.persistence.Column
 import javax.persistence.Entity
+import javax.persistence.Index
 import javax.persistence.Table
 
 
 object AgreementSchema
 
-object AgreementSchemaV1 : MappedSchema(
-        schemaFamily = AgreementSchema.javaClass,
-        version = 1,
-        mappedTypes = listOf(PersistentAgreement::class.java)
-) {
+/**
+ * First version of an [AgreementSchema] schema.
+ */
 
+
+object AgreementSchemaV1 : MappedSchema(AgreementSchema.javaClass, 1, listOf(PersistentAgreement::class.java)) {
     @Entity
-    @Table(name = "agreement_states")
+    @Table(name = "agreement_states", indexes = arrayOf(Index(name = "idx_agreement_party", columnList = "party"),
+            Index(name = "idx_agreement_agreementName", columnList = "agreementName")))
     class PersistentAgreement(
             @Column(name = "agreementNumber")
             var agreementNumber: String,
+
             @Column(name = "agreementName")
             var agreementName: String,
+
             @Column(name = "agreementHash")
             var agreementHash: String,
+
             @Column(name = "agreementStatus")
             var agreementStatus: String,
+
             @Column(name = "agreementType")
             var agreementType: String,
+
             @Column(name = "totalAgreementValue")
             var totalAgreementValue: String,
+
             @Column(name = "party")
             var party: String,
+
             @Column(name = "counterparty")
             var counterparty: String,
-            //     @Column(name = "agreementStartDate")
-            //     var agreementStartDate: String,
-            //     @Column(name = "agreementEndDate")
-            //     var agreementEndDate: String,
+
+            @Column(name = "agreementStartDate")
+            var agreementStartDate: String,
+
+            @Column(name = "agreementEndDate")
+            var agreementEndDate: String,
             //     @Column(name = "active")
             //     var active: String,
             //     @Column(name = "createdAt")
             //     var createdAt: String,
             //     @Column(name = "lastUpdated")
-            //    var lastUpdated: String,
+            //     var lastUpdated: String,
             @Column(name = "linear_id")
-            var linearId: String,
-            @Column(name = "external_Id")
-            var externalId: String
+            var linearId: String
+            //     @Column(name = "external_Id")
+            //     var externalId: String
     ) : PersistentState() {
-        @Suppress("UNUSED")
-        constructor() : this(
-                agreementNumber = "",
-                agreementName = "",
-                agreementHash = "",
-                agreementStatus = "",
-                agreementType = "",
-                totalAgreementValue = "",
-                party = "",
-                counterparty = "",
-                //           agreementStartDate = "",
-                //          agreementEndDate = "",
-                //          active = "",
-                //           createdAt = "",
-                //            lastUpdated = "",
-                linearId = "",
-                externalId = ""
-        )
+        constructor() : this("default-constructor-required-for-hibernate", "", "", "", "", "", "", "", "", "", "")
     }
+
 }

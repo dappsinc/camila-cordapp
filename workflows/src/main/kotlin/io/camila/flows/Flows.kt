@@ -36,6 +36,7 @@ import net.corda.core.utilities.ProgressTracker
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.util.*
 
 // *********
 // * Activate Agreement Flow *
@@ -77,8 +78,8 @@ class ActivateAgreementFlow(val agreementNumber: String) : FlowLogic<SignedTrans
                 agreement.totalAgreementValue,
                 agreement.party,
                 agreement.counterparty,
-                // agreement.agreementStartDate,
-                // agreement.agreementEndDate,
+                agreement.agreementStartDate,
+                agreement.agreementEndDate,
                 // agreement.agreementLineItem,
                 // agreement.attachmentId,
                 // agreement.active,
@@ -173,8 +174,8 @@ class RenewAgreementFlow(val agreementNumber: String) : FlowLogic<SignedTransact
                 agreement.totalAgreementValue,
                 agreement.party,
                 agreement.counterparty,
-                // agreement.agreementStartDate,
-                // agreement.agreementEndDate,
+                agreement.agreementStartDate,
+                agreement.agreementEndDate,
                 // agreement.agreementLineItem,
                 // agreement.attachmentId,
                 // agreement.active,
@@ -246,8 +247,8 @@ class AmendAgreementFlow(val agreementNumber: String) : FlowLogic<SignedTransact
                 agreement.totalAgreementValue,
                 agreement.party,
                 agreement.counterparty,
-                //  agreement.agreementStartDate,
-                //  agreement.agreementEndDate,
+                agreement.agreementStartDate,
+                agreement.agreementEndDate,
                 //  agreement.agreementLineItem,
                 //  agreement.attachmentId,
                 //  agreement.active,
@@ -319,8 +320,8 @@ class TerminateAgreementFlow(val agreementNumber: String) : FlowLogic<SignedTran
                 agreement.totalAgreementValue,
                 agreement.party,
                 agreement.counterparty,
-                // agreement.agreementStartDate,
-                // agreement.agreementEndDate,
+                agreement.agreementStartDate,
+                agreement.agreementEndDate,
                 // agreement.agreementLineItem,
                 //   agreement.attachmentId,
                 //  agreement.active,
@@ -379,8 +380,8 @@ object CreateAgreementFlow {
                     val agreementStatus: AgreementStatus,
                     val agreementType: AgreementType,
                     val totalAgreementValue: Int,
-            //  val agreementStartDate: String,
-            //  val agreementEndDate: String,
+                    val agreementStartDate: String,
+                    val agreementEndDate: String,
             //  val agreementLineItem: AgreementLineItem,
             //  val attachmentId: SecureHash.SHA256,
             //   val active: Boolean,
@@ -425,7 +426,7 @@ object CreateAgreementFlow {
             // Generate an unsigned transaction.
             val me = ourIdentityAndCert.party
             // val agreementState = Agreement(agreementNumber, agreementName, agreementStatus, agreementType, totalAgreementValue, serviceHub.myInfo.legalIdentities.first(), otherParty, agreementStartDate, agreementEndDate, agreementLineItem, attachmentId, active, createdAt, lastUpdated )
-            val agreementState = Agreement(agreementNumber, agreementName, agreementHash, agreementStatus, agreementType, totalAgreementValue, serviceHub.myInfo.legalIdentities.first(), otherParty)
+            val agreementState = Agreement(agreementNumber, agreementName, agreementHash, agreementStatus, agreementType, totalAgreementValue, me,  otherParty, agreementStartDate, agreementEndDate)
             val txCommand = Command(AgreementContract.Commands.CreateAgreement(), agreementState.participants.map { it.owningKey })
             progressTracker.currentStep = VERIFYING_TRANSACTION
             val txBuilder = TransactionBuilder(notary)

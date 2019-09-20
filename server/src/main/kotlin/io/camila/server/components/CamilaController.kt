@@ -52,6 +52,7 @@ import io.camila.chat.Chat
 import net.corda.core.contracts.TransactionVerificationException
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.utilities.getOrThrow
+import org.springframework.format.annotation.DateTimeFormat
 import javax.servlet.http.HttpServletRequest
 
 
@@ -142,7 +143,7 @@ class CamilaController() {
     @GetMapping(value = "/getMessages", produces = arrayOf("application/json"))
     @ApiOperation(value = "Get Baton Messages")
     fun getMessages(@PathVariable nodeName: Optional<String>): List<Map<String, String>> {
-        val messageStateAndRefs = this.getService(nodeName).proxy().vaultQueryBy<Chat.Message>().states
+        val messageStateAndRefs = this.getService(nodeName).proxy().vaultQuery(Chat.Message::class.java).states
         val messageStates = messageStateAndRefs.map { it.state.data }
         return messageStates.map { it.toJson() }
     }
@@ -154,7 +155,7 @@ class CamilaController() {
     @GetMapping(value = "/getMessages/userId", produces = arrayOf("application/json"))
     @ApiOperation(value = "Get Baton Messages by userId")
     fun getMessagesByUserId(@PathVariable nodeName: Optional<String>): List<Map<String, String>> {
-        val messageStateAndRefs = this.getService(nodeName).proxy().vaultQueryBy<Chat.Message>().states
+        val messageStateAndRefs = this.getService(nodeName).proxy().vaultQuery(Chat.Message::class.java).states
         val messageStates = messageStateAndRefs.map { it.state.data }
         return messageStates.map { it.toJson() }
     }
@@ -166,7 +167,7 @@ class CamilaController() {
     @GetMapping(value = "/getReceivedMessages", produces = arrayOf("application/json"))
     @ApiOperation(value = "Get Received Baton Messages")
     fun getRecievedMessages(@PathVariable nodeName: Optional<String>): List<Map<String, String>> {
-        val messageStateAndRefs = this.getService(nodeName).proxy().vaultQueryBy<Chat.Message>().states
+        val messageStateAndRefs = this.getService(nodeName).proxy().vaultQuery(Chat.Message::class.java).states
         val messageStates = messageStateAndRefs.map { it.state.data }
         return messageStates.map { it.toJson() }
     }
@@ -177,7 +178,7 @@ class CamilaController() {
     @GetMapping(value = "/getSentMessages", produces = arrayOf("application/json"))
     @ApiOperation(value = "Get Sent Baton Messages")
     fun getSentMessages(@PathVariable nodeName: Optional<String>): List<Map<String, String>> {
-        val messageStateAndRefs = this.getService(nodeName).proxy().vaultQueryBy<Chat.Message>().states
+        val messageStateAndRefs = this.getService(nodeName).proxy().vaultQuery(Chat.Message::class.java).states
         val messageStates = messageStateAndRefs.map { it.state.data }
         return messageStates.map { it.toJson() }
     }
@@ -232,10 +233,10 @@ class CamilaController() {
     /** Returns a list of existing Agreements. */
 
     @CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://camila.network", "localhost:8080", "localhost:3000", "https://statesets.com"])
-    @GetMapping(value = "/getAgreements", produces = arrayOf("application/json"))
+    @GetMapping(value = "/getAgreements")
     @ApiOperation(value = "Get Agreements")
     fun getAgreements(@PathVariable nodeName: Optional<String>): List<Map<String, String>> {
-        val agreementStateAndRefs = this.getService(nodeName).proxy().vaultQueryBy<Agreement>().states
+        val agreementStateAndRefs = this.getService(nodeName).proxy().vaultQuery(Agreement::class.java).states
         val agreementStates = agreementStateAndRefs.map { it.state.data }
         return agreementStates.map { it.toJson() }
     }
@@ -255,6 +256,10 @@ class CamilaController() {
                         @RequestParam("agreementStatus") agreementStatus: AgreementStatus,
                         @RequestParam("agreementType") agreementType: AgreementType,
                         @RequestParam("totalAgreementValue") totalAgreementValue: Int,
+                        @RequestParam("agreementStartDate") agreementStartDate: String,
+                        // @DateTimeFormat(pattern = "yyyy-MM-dd", iso = DateTimeFormat.ISO.DATE_TIME)
+                        @RequestParam("agreementEndDate") agreementEndDate: String,
+                        // @DateTimeFormat(pattern = "yyyy-MM-dd", iso = DateTimeFormat.ISO.DATE_TIME)
                         @RequestParam("counterpartyName") counterpartyName: String?): ResponseEntity<Any?> {
 
         if (counterpartyName == null) {
@@ -263,7 +268,7 @@ class CamilaController() {
 
         val (status, message) = try {
 
-            val result = getService(nodeName).createAgreement(agreementNumber, agreementName, agreementHash, agreementStatus, agreementType, totalAgreementValue, counterpartyName)
+            val result = getService(nodeName).createAgreement(agreementNumber, agreementName, agreementHash, agreementStatus, agreementType, totalAgreementValue, counterpartyName, agreementStartDate, agreementEndDate)
 
             HttpStatus.CREATED to mapOf<String, String>(
                     "agreementNumber" to "$agreementNumber",
@@ -271,11 +276,13 @@ class CamilaController() {
                     "agreementStatus" to "$agreementStatus",
                     "agreementType" to "$agreementType",
                     "totalAgreementValue" to "$totalAgreementValue",
-                    "counterparty" to "$counterpartyName"
+                    "agreementStartDate" to "$agreementStartDate",
+                    "agreementEndDate" to "$agreementEndDate",
+                    "counterpartyName" to "$counterpartyName"
             )
 
         } catch (e: Exception) {
-            logger.error("Error sending Contact to ${counterpartyName}", e)
+            logger.error("Error sending Agreement to ${counterpartyName}", e)
             e.printStackTrace()
             HttpStatus.BAD_REQUEST to e.message
         }

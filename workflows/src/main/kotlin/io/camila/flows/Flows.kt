@@ -115,9 +115,16 @@ class ActivateAgreementFlow(val agreementNumber: String) : FlowLogic<SignedTrans
         txBuilder.addCommand(AgreementContract.Commands.ActivateAgreement(), ourIdentity.owningKey)
         // txBuilder.addCommand(AgreementLineItemContract.Commands.ActivateAgreementLineItem(), ourIdentity.owningKey)
         txBuilder.verify(serviceHub)
+        // Sign the transaction.
 
-        val stx = serviceHub.signInitialTransaction(txBuilder)
-        return subFlow(FinalityFlow(stx))
+        val partSignedTx = serviceHub.signInitialTransaction(txBuilder)
+
+
+        val otherPartyFlow = initiateFlow(agreement.counterparty)
+        val fullySignedTx = subFlow(CollectSignaturesFlow(partSignedTx, setOf(otherPartyFlow)))
+
+        // Finalising the transaction.
+        return subFlow(FinalityFlow(fullySignedTx, listOf(otherPartyFlow)))
     }
 
     @InitiatedBy(ActivateAgreementFlow::class)
@@ -129,7 +136,7 @@ class ActivateAgreementFlow(val agreementNumber: String) : FlowLogic<SignedTrans
                     val output = stx.tx.outputs.single().data
                     "This must be an Agreement transaction." using (output is Agreement)
                     val agreement = output as Agreement
-                    "I won't accept Agreements with a value under 100." using (agreement.totalAgreementValue >= 100)
+                    "The agreement status has to be Activated" using (agreement.agreementStatus == AgreementStatus.ACTIVATED)
                 }
             }
 
@@ -185,8 +192,16 @@ class RenewAgreementFlow(val agreementNumber: String) : FlowLogic<SignedTransact
         txBuilder.addInputState(agreementStateAndRef)
         txBuilder.addOutputState(renewedAgreement, AgreementContract.AGREEMENT_CONTRACT_ID)
         txBuilder.addCommand(AgreementContract.Commands.RenewAgreement(), ourIdentity.owningKey)
-        txBuilder.verify(serviceHub)
-        return serviceHub.signInitialTransaction(txBuilder)
+        // Sign the transaction.
+
+        val partSignedTx = serviceHub.signInitialTransaction(txBuilder)
+
+
+        val otherPartyFlow = initiateFlow(agreement.counterparty)
+        val fullySignedTx = subFlow(CollectSignaturesFlow(partSignedTx, setOf(otherPartyFlow)))
+
+        // Finalising the transaction.
+        return subFlow(FinalityFlow(fullySignedTx, listOf(otherPartyFlow)))
     }
 
     @InitiatedBy(RenewAgreementFlow::class)
@@ -256,10 +271,16 @@ class AmendAgreementFlow(val agreementNumber: String) : FlowLogic<SignedTransact
         txBuilder.addInputState(agreementStateAndRef)
         txBuilder.addOutputState(amendedAgreement, AgreementContract.AGREEMENT_CONTRACT_ID)
         txBuilder.addCommand(AgreementContract.Commands.AmendAgreement(), ourIdentity.owningKey)
-        txBuilder.verify(serviceHub)
+        // Sign the transaction.
 
-        val stx = serviceHub.signInitialTransaction(txBuilder)
-        return serviceHub.signInitialTransaction(txBuilder)
+        val partSignedTx = serviceHub.signInitialTransaction(txBuilder)
+
+
+        val otherPartyFlow = initiateFlow(agreement.counterparty)
+        val fullySignedTx = subFlow(CollectSignaturesFlow(partSignedTx, setOf(otherPartyFlow)))
+
+        // Finalising the transaction.
+        return subFlow(FinalityFlow(fullySignedTx, listOf(otherPartyFlow)))
     }
 
     @InitiatedBy(AmendAgreementFlow::class)
@@ -327,10 +348,16 @@ class TerminateAgreementFlow(val agreementNumber: String) : FlowLogic<SignedTran
         txBuilder.addInputState(agreementStateAndRef)
         txBuilder.addOutputState(terminatedAgreement, AgreementContract.AGREEMENT_CONTRACT_ID)
         txBuilder.addCommand(AgreementContract.Commands.TerminateAgreement(), ourIdentity.owningKey)
-        txBuilder.verify(serviceHub)
+        // Sign the transaction.
 
-        val stx = serviceHub.signInitialTransaction(txBuilder)
-        return serviceHub.signInitialTransaction(txBuilder)
+        val partSignedTx = serviceHub.signInitialTransaction(txBuilder)
+
+
+        val otherPartyFlow = initiateFlow(agreement.counterparty)
+        val fullySignedTx = subFlow(CollectSignaturesFlow(partSignedTx, setOf(otherPartyFlow)))
+
+        // Finalising the transaction.
+        return subFlow(FinalityFlow(fullySignedTx, listOf(otherPartyFlow)))
     }
 
     @InitiatedBy(TerminateAgreementFlow::class)

@@ -106,10 +106,10 @@ class CamilaController() {
                 "agreementStatus" to agreementStatus.toString(),
                 "totalAgreementValue" to totalAgreementValue.toString(),
                 "agreementHash" to agreementHash,
-                "linearId" to linearId.toString(),
                 "active" to active.toString(),
                 "createdAt" to createdAt.toString(),
-                "lastUpdated" to lastUpdated.toString())
+                "lastUpdated" to lastUpdated.toString(),
+                "linearId" to linearId.toString())
     }
 
 

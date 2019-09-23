@@ -88,12 +88,6 @@ java -jar corda.jar
 
 ```
 
-After the managed package click on `Configure` next to the installed Managed Package.
-
-Go to the search bar on the left and click on Installed Packages. Next to the DSOA installed package select `Configure`.
-
-and then just click `Connect to DSOA` at the bottom and you will be redirected to Authenticate with a Connected App page.
-
 
 #### Node Configuration
 

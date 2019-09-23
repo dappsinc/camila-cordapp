@@ -28,47 +28,6 @@ Camila is a Contract Lifecycle Management (CLM) network for inter-firm process a
 
 ```
 
-
- ``` 
- 			Transaction Flow
- 
-	Party                 Counterparty                 Notary
-          |                       |                       |
-   Chooses a notary
-          |                       |                       |
-    Starts building
-     a transaction                |                       |
-          |
-    Adds the output               |                       |
-      Agreement
-          |                       |                       |
-       Adds the
-  CreateAgreement command         |                       |
-          |
-     Verifies the                 |                       |
-      transaction
-          |                       |                       |
-      Signs the
-     transaction                  |                       |
-          |
-          |---------------------------------------------->|
-          |                       |                       |
-                                                     Notarises the
-          |                       |                   transaction
-                                                          |
-          |<----------------------------------------------|
-          |                       |                       |
-     Records the
-     transaction                  |                       |
-          |
-          |---------------------->|                       |
-                                  |
-          |                  Records the                  |
-                             transaction
-          |                       |                       |
-                                                        
-```
-
 ### Camila CLM Network Setup
 
 
@@ -256,4 +215,44 @@ data class AgreementLineItem (val agreement: Agreement,
 
 }
 
+```
+
+ ``` 
+ 			Transaction Flow
+ 
+	Party                 Counterparty                 Notary
+          |                       |                       |
+   Chooses a notary
+          |                       |                       |
+    Starts building
+     a transaction                |                       |
+          |
+    Adds the output               |                       |
+      Agreement
+          |                       |                       |
+       Adds the
+  CreateAgreement command         |                       |
+          |
+     Verifies the                 |                       |
+      transaction
+          |                       |                       |
+      Signs the
+     transaction                  |                       |
+          |
+          |---------------------------------------------->|
+          |                       |                       |
+                                                     Notarises the
+          |                       |                   transaction
+                                                          |
+          |<----------------------------------------------|
+          |                       |                       |
+     Records the
+     transaction                  |                       |
+          |
+          |---------------------->|                       |
+                                  |
+          |                  Records the                  |
+                             transaction
+          |                       |                       |
+                                                        
 ```

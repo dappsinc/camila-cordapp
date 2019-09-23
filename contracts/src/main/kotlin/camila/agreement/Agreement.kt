@@ -25,6 +25,7 @@ import net.corda.core.schemas.PersistentState
 import net.corda.core.schemas.QueryableState
 import net.corda.core.serialization.CordaSerializable
 import net.corda.core.transactions.LedgerTransaction
+import net.corda.core.utilities.toBase58String
 import java.lang.IllegalArgumentException
 import java.util.*
 
@@ -32,7 +33,6 @@ import java.util.*
 // * Agreement State *
 // *****************
 
-@CordaSerializable
 @BelongsToContract(AgreementContract::class)
 data class Agreement(val agreementNumber: String,
                      val agreementName: String,
@@ -44,15 +44,58 @@ data class Agreement(val agreementNumber: String,
                      val counterparty: Party,
                      val agreementStartDate: String,
                      val agreementEndDate: String,
-        //val agreementLineItem: AgreementLineItem,
-        //val attachmentId: SecureHash.SHA256,
-        //val active: Boolean,
-        //val createdAt: String,
-        //val lastUpdated: String,
-                     override val linearId: UniqueIdentifier = UniqueIdentifier()) : LinearState {
+                     val active: Boolean?,
+                     val createdAt: String?,
+                     val lastUpdated: String?,
+                     override val linearId: UniqueIdentifier = UniqueIdentifier()) : ContractState, LinearState, QueryableState {
 
     override val participants: List<AbstractParty> get() = listOf(party, counterparty)
 
+    override fun toString(): String {
+        val partyString = (party as? Party)?.name?.organisation ?: party.owningKey.toBase58String()
+        val counterpartyString = (counterparty as? Party)?.name?.organisation ?: counterparty.owningKey.toBase58String()
+        return "Agreement($linearId): $counterpartyString has a contract with $partyString for $totalAgreementValue and the current status is $agreementStatus."
+    }
+
+    override fun generateMappedObject(schema: MappedSchema): PersistentState {
+        return when (schema) {
+            is AgreementSchemaV1 -> AgreementSchemaV1.PersistentAgreement(
+                    agreementNumber = this.agreementNumber,
+                    agreementName = this.agreementName,
+                    agreementHash = this.agreementHash,
+                    agreementStatus = this.agreementStatus.toString(),
+                    agreementType = this.agreementType.toString(),
+                    totalAgreementValue = this.totalAgreementValue.toString(),
+                    party = this.party.name.toString(),
+                    counterparty = this.counterparty.name.toString(),
+                    agreementStartDate = this.agreementStartDate,
+                    agreementEndDate = this.agreementEndDate,
+                    linearId = this.linearId.id.toString()
+
+            )
+            is AgreementSchemaV2 -> AgreementSchemaV2.PersistentAgreement (
+                    agreementNumber = this.agreementNumber,
+                    agreementName = this.agreementName,
+                    agreementHash = this.agreementHash,
+                    agreementStatus = this.agreementStatus.toString(),
+                    agreementType = this.agreementType.toString(),
+                    totalAgreementValue = this.totalAgreementValue.toString(),
+                    party = this.party.name.toString(),
+                    counterparty = this.counterparty.name.toString(),
+                    agreementStartDate = this.agreementStartDate,
+                    agreementEndDate = this.agreementEndDate,
+                    active = this.active.toString(),
+                    createdAt = this.createdAt.toString(),
+                    lastUpdated = this.lastUpdated.toString(),
+                    linearId = this.linearId.id.toString(),
+                    externalId = this.linearId.id.toString()
+
+            )
+            else -> throw IllegalArgumentException("Unrecognized schema $schema")
+        }
+    }
+
+    override fun supportedSchemas(): Iterable<MappedSchema> = listOf(AgreementSchemaV1, AgreementSchemaV2)
 }
 
 @CordaSerializable

@@ -94,19 +94,6 @@ class CamilaController() {
     }
 
 
-    private inline fun <reified U : ContractState> getState(
-            services: ServiceHub,
-            block: (generalCriteria: QueryCriteria.VaultQueryCriteria) -> QueryCriteria
-    ): List<StateAndRef<U>> {
-        val query = builder {
-            val generalCriteria = QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED)
-            block(generalCriteria)
-        }
-        val result = services.vaultService.queryBy<U>(query)
-        return result.states
-    }
-
-
     /** Maps an Agreement to a JSON object. */
 
     private fun Agreement.toJson(): Map<String, String> {
@@ -242,6 +229,33 @@ class CamilaController() {
     }
 
 
+    @CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://camila.network", "localhost:8080", "localhost:3000", "https://statesets.com"])
+    @GetMapping(value = "/getAllAgreements")
+    @ApiOperation(value = "Get All Agreements")
+    fun agreements(@PathVariable nodeName: Optional<String>): List<Agreement> {
+        val agreementStatesAndRefs = this.getService(nodeName).proxy().vaultQuery(Agreement::class.java).states
+        return agreementStatesAndRefs
+                .map { agreementStateAndRef -> agreementStateAndRef.state.data }
+                .map { state ->
+
+                    Agreement(state.party.name.organisation,
+                              state.counterparty.name.organisation,
+                              state.agreementName,
+                              state.agreementStatus,
+                              state.agreementType,
+                              state.totalAgreementValue,
+                              state.party,
+                              state.counterparty,
+                              state.agreementStartDate,
+                              state.agreementEndDate,
+                              state.active,
+                              state.createdAt,
+                              state.lastUpdated,
+                              state.linearId)
+                }
+    }
+
+
     /** Creates an Agreement. */
 
     /** Searchable PDF is mapped by agreement linearId **/
@@ -250,7 +264,8 @@ class CamilaController() {
     @CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://camila.network", "localhost:8080", "localhost:3000", "https://statesets.com"])
     @PostMapping(value = "/createAgreement")
     @ApiOperation(value = "Create Agreement")
-    fun createAgreement(@PathVariable nodeName: Optional<String>, @RequestParam("agreementNumber") agreementNumber: String,
+    fun createAgreement(@PathVariable nodeName: Optional<String>,
+                        @RequestParam("agreementNumber") agreementNumber: String,
                         @RequestParam("agreementName") agreementName: String,
                         @RequestParam("agreementHash") agreementHash: String,
                         @RequestParam("agreementStatus") agreementStatus: AgreementStatus,
@@ -262,9 +277,17 @@ class CamilaController() {
                         // @DateTimeFormat(pattern = "yyyy-MM-dd", iso = DateTimeFormat.ISO.DATE_TIME)
                         @RequestParam("counterpartyName") counterpartyName: String?): ResponseEntity<Any?> {
 
+
+        if (nodeName == null) {
+            return ResponseEntity.status(TSResponse.BAD_REQUEST).body("Query parameter 'counterPartyName' missing or has wrong format.\n")
+        }
+
+
         if (counterpartyName == null) {
             return ResponseEntity.status(TSResponse.BAD_REQUEST).body("Query parameter 'counterPartyName' missing or has wrong format.\n")
         }
+
+
 
         val (status, message) = try {
 
@@ -273,11 +296,13 @@ class CamilaController() {
             HttpStatus.CREATED to mapOf<String, String>(
                     "agreementNumber" to "$agreementNumber",
                     "agreementName" to "$agreementName",
+                    "agreementHash" to "$agreementHash",
                     "agreementStatus" to "$agreementStatus",
                     "agreementType" to "$agreementType",
                     "totalAgreementValue" to "$totalAgreementValue",
                     "agreementStartDate" to "$agreementStartDate",
                     "agreementEndDate" to "$agreementEndDate",
+                    "party" to "$nodeName",
                     "counterpartyName" to "$counterpartyName"
             )
 

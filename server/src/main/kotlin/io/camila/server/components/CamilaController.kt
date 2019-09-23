@@ -50,9 +50,25 @@ import org.springframework.web.bind.annotation.CrossOrigin
 import io.camila.agreement.*
 import io.camila.chat.Chat
 import net.corda.core.contracts.TransactionVerificationException
+import net.corda.core.crypto.SecureHash
 import net.corda.core.identity.CordaX500Name
+import net.corda.core.node.services.AttachmentId
+import net.corda.core.node.services.vault.AttachmentQueryCriteria
+import net.corda.core.node.services.vault.Builder
 import net.corda.core.utilities.getOrThrow
+import org.springframework.core.io.InputStreamResource
 import org.springframework.format.annotation.DateTimeFormat
+import org.springframework.http.HttpHeaders
+import org.springframework.web.multipart.MultipartFile
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.io.InputStream
+import java.net.URI
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
+import javax.annotation.Resource
 import javax.servlet.http.HttpServletRequest
 
 
@@ -414,6 +430,86 @@ class CamilaController() {
     }
 
 
+    /** Upload the File. */
+
+    @CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://camila.network", "localhost:8080", "localhost:3000", "https://statesets.com"])
+    @PostMapping(value = "/upload")
+    @ApiOperation(value = "Upload Agreement")
+    fun upload(@PathVariable nodeName: Optional<String>, @RequestParam file: MultipartFile, @RequestParam uploader: String): ResponseEntity<String> {
+        val filename = file.originalFilename
+        require(filename != null) { "File name must be set" }
+        val hash: SecureHash = if (!(file.contentType == "zip" || file.contentType == "jar")) {
+            uploadZip(nodeName, file.inputStream, uploader, filename!!)
+        } else {
+            this.getService(nodeName).proxy().uploadAttachmentWithMetadata(
+                    jar = file.inputStream,
+                    uploader = uploader,
+                    filename = filename!!
+            )
+        }
+        return ResponseEntity.created(URI.create("attachments/$hash")).body("Attachment uploaded with hash - $hash")
+    }
+
+    private fun uploadZip(nodeName: Optional<String>, inputStream: InputStream, uploader: String, filename: String): AttachmentId {
+        val zipName = "$filename-${UUID.randomUUID()}.zip"
+        FileOutputStream(zipName).use { fileOutputStream ->
+            ZipOutputStream(fileOutputStream).use { zipOutputStream ->
+                val zipEntry = ZipEntry(filename)
+                zipOutputStream.putNextEntry(zipEntry)
+                inputStream.copyTo(zipOutputStream, 1024)
+            }
+        }
+        return FileInputStream(zipName).use { fileInputStream ->
+            val hash = this.getService(nodeName).proxy().uploadAttachmentWithMetadata(
+                    jar = fileInputStream,
+                    uploader = uploader,
+                    filename = filename
+            )
+            Files.deleteIfExists(Paths.get(zipName))
+            hash
+        }
+    }
+
+
+    /** Download the File. */
+
+    @CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://camila.network", "localhost:8080", "localhost:3000", "https://statesets.com"])
+    @GetMapping(value = "/download")
+    @ApiOperation(value = "Download Agreement")
+    fun downloadByName(@PathVariable nodeName: Optional<String>, @RequestParam name: String): ResponseEntity<InputStreamResource> {
+        val attachmentIds: List<AttachmentId> = this.getService(nodeName).proxy().queryAttachments(
+                AttachmentQueryCriteria.AttachmentsQueryCriteria(filenameCondition = Builder.equal(name)),
+                null
+        )
+        val inputStreams = attachmentIds.map { this.getService(nodeName).proxy().openAttachment(it) }
+        val zipToReturn = if (inputStreams.size == 1) {
+            inputStreams.single()
+        } else {
+            combineZips(inputStreams, name)
+        }
+        return ResponseEntity.ok().header(
+                HttpHeaders.CONTENT_DISPOSITION,
+                "attachment; filename=\"$name.zip\""
+        ).body(InputStreamResource(zipToReturn))
+    }
+
+    private fun combineZips(inputStreams: List<InputStream>, filename: String): InputStream {
+        val zipName = "$filename-${UUID.randomUUID()}.zip"
+        FileOutputStream(zipName).use { fileOutputStream ->
+            ZipOutputStream(fileOutputStream).use { zipOutputStream ->
+                inputStreams.forEachIndexed { index, inputStream ->
+                    val zipEntry = ZipEntry("$filename-$index.zip")
+                    zipOutputStream.putNextEntry(zipEntry)
+                    inputStream.copyTo(zipOutputStream, 1024)
+                }
+            }
+        }
+        return try {
+            FileInputStream(zipName)
+        } finally {
+            Files.deleteIfExists(Paths.get(zipName))
+        }
+    }
 
 
 

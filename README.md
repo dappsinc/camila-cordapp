@@ -2,6 +2,44 @@
 
 Camila is a Contract Lifecycle Management (CLM) network for inter-firm process automation.
 
+ ``` 
+	Party                 Counterparty                 Notary
+          |                       |                       |
+   Chooses a notary
+          |                       |                       |
+    Starts building
+     a transaction                |                       |
+          |
+    Adds the output               |                       |
+      Agreement
+          |                       |                       |
+       Adds the
+  CreateAgreement command         |                       |
+          |
+     Verifies the                 |                       |
+      transaction
+          |                       |                       |
+      Signs the
+     transaction                  |                       |
+          |
+          |---------------------------------------------->|
+          |                       |                       |
+                                                     Notarises the
+          |                       |                   transaction
+                                                          |
+          |<----------------------------------------------|
+          |                       |                       |
+     Records the
+     transaction                  |                       |
+          |
+          |---------------------->|                       |
+                                  |
+          |                  Records the                  |
+                             transaction
+          |                       |                       |
+                                                        
+```
+
 ### Camila CLM Network Setup
 
 
@@ -87,12 +125,6 @@ java -jar corda.jar --initial-registration --network-root-truststore /var/tmp/ne
 java -jar corda.jar
 
 ```
-
-After the managed package click on `Configure` next to the installed Managed Package.
-
-Go to the search bar on the left and click on Installed Packages. Next to the DSOA installed package select `Configure`.
-
-and then just click `Connect to DSOA` at the bottom and you will be redirected to Authenticate with a Connected App page.
 
 
 #### Node Configuration

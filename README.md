@@ -2,7 +2,7 @@
 
 Camila is a Contract Lifecycle Management (CLM) network for inter-firm process automation.
 
-  
+ ``` 
 	Party                 Counterparty                 Notary
           |                       |                       |
    Chooses a notary
@@ -38,6 +38,7 @@ Camila is a Contract Lifecycle Management (CLM) network for inter-firm process a
                              transaction
           |                       |                       |
                                                         
+```
 
 ### Camila CLM Network Setup
 

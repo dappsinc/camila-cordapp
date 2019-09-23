@@ -98,15 +98,18 @@ class CamilaController() {
 
     private fun Agreement.toJson(): Map<String, String> {
         return kotlin.collections.mapOf(
+                "agreementNumber" to agreementNumber,
+                "agreementName" to agreementName,
                 "party" to party.name.organisation,
                 "counterparty" to counterparty.name.organisation,
-                "agreementName" to agreementName,
-                "agreementNumber" to agreementNumber,
+                "agreementType" to agreementType.toString(),
                 "agreementStatus" to agreementStatus.toString(),
                 "totalAgreementValue" to totalAgreementValue.toString(),
                 "agreementHash" to agreementHash,
                 "linearId" to linearId.toString(),
-                "agreementType" to agreementType.toString())
+                "active" to active.toString(),
+                "createdAt" to createdAt.toString(),
+                "lastUpdated" to lastUpdated.toString())
     }
 
 

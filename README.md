@@ -3,7 +3,7 @@
 Camila is a Contract Lifecycle Management (CLM) network for inter-firm process automation.
 
 ```
-			8 Node Network Map 
+			8 Node Network Graph | 28 Edges
 -------------------------------------------------------------------
 
 	 /--------\   	 /--------\      /--------\                                   

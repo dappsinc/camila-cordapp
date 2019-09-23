@@ -2,7 +2,36 @@
 
 Camila is a Contract Lifecycle Management (CLM) network for inter-firm process automation.
 
+```
+			8 Node Network Map 
+-------------------------------------------------------------------
+
+	 /--------\   	 /--------\      /--------\                                   
+	|	   |	|	   |    |          |                            
+	|  PartyB  |	|  PartyC  |	|  PartyD  | 
+	|          |	|	   |	|          |                             
+ 	 \--------/	 \--------/	 \--------/
+
+ /--------\		 /--------\	        /--------\
+|	   |		|	   |	       |	  |
+|  PartyA  |		|  Notary  |	       |  PartyE  | 
+|	   |		|	   |	       |	  | 
+ \--------/		 \--------/		\--------/
+
+	 /--------\   	 /--------\      /--------\                                   
+	|	   |	|	   |    |          |                            
+	|  PartyH  |	|  PartyG  |	|  PartyF  | 
+	|          |	|	   |	|          |                             
+ 	 \--------/	 \--------/	 \--------/
+
+--------------------------------------------------------------------
+
+```
+
+
  ``` 
+ 			Transaction Flow
+ 
 	Party                 Counterparty                 Notary
           |                       |                       |
    Chooses a notary

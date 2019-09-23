@@ -76,7 +76,7 @@ import javax.servlet.http.HttpServletRequest
  * Carmen API Endpoints
  */
 
-@CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://camila.network", "localhost:8080", "localhost:3000", "https://statesets.com"])
+@CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://camila.network", "http://localhost:8080", "http://localhost:3000", "https://statesets.com"])
 @RestController
 @RequestMapping("/api/{nodeName}")
 class CamilaController() {
@@ -120,6 +120,8 @@ class CamilaController() {
                 "counterparty" to counterparty.name.organisation,
                 "agreementType" to agreementType.toString(),
                 "agreementStatus" to agreementStatus.toString(),
+                "agreementStartDate" to agreementStartDate,
+                "agreementEndDate" to agreementEndDate,
                 "totalAgreementValue" to totalAgreementValue.toString(),
                 "agreementHash" to agreementHash,
                 "active" to active.toString(),
@@ -145,7 +147,7 @@ class CamilaController() {
 
     /** Returns a list of existing Messages. */
 
-    @CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://carmen.network", "localhost:8080", "localhost:3000", "https://statesets.com"])
+    @CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://camila.network", "http://localhost:8080", "http://localhost:3000", "https://statesets.com"])
     @GetMapping(value = "/getMessages", produces = arrayOf("application/json"))
     @ApiOperation(value = "Get Baton Messages")
     fun getMessages(@PathVariable nodeName: Optional<String>): List<Map<String, String>> {
@@ -157,7 +159,7 @@ class CamilaController() {
 
     /** Get Messages by UserId */
 
-    @CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://carmen.network", "localhost:8080", "localhost:3000", "https://statesets.com"])
+    @CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://camila.network", "http://localhost:8080", "http://localhost:3000", "https://statesets.com"])
     @GetMapping(value = "/getMessages/userId", produces = arrayOf("application/json"))
     @ApiOperation(value = "Get Baton Messages by userId")
     fun getMessagesByUserId(@PathVariable nodeName: Optional<String>): List<Map<String, String>> {
@@ -169,7 +171,7 @@ class CamilaController() {
 
     /** Returns a list of received Messages. */
 
-    @CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://carmen.network", "localhost:8080", "localhost:3000", "https://statesets.com"])
+    @CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://camila.network", "http://localhost:8080", "http://localhost:3000", "https://statesets.com"])
     @GetMapping(value = "/getReceivedMessages", produces = arrayOf("application/json"))
     @ApiOperation(value = "Get Received Baton Messages")
     fun getRecievedMessages(@PathVariable nodeName: Optional<String>): List<Map<String, String>> {
@@ -180,7 +182,7 @@ class CamilaController() {
 
     /** Returns a list of Sent Messages. */
 
-    @CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://carmen.network", "localhost:8080", "localhost:3000", "https://statesets.com"])
+    @CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://camila.network", "http://localhost:8080", "http://localhost:3000", "https://statesets.com"])
     @GetMapping(value = "/getSentMessages", produces = arrayOf("application/json"))
     @ApiOperation(value = "Get Sent Baton Messages")
     fun getSentMessages(@PathVariable nodeName: Optional<String>): List<Map<String, String>> {
@@ -193,7 +195,7 @@ class CamilaController() {
     /** Send Message*/
 
 
-    @CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://carmen.network", "localhost:8080", "localhost:3000", "https://statesets.com"])
+    @CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://camila.network", "http://localhost:8080", "http://localhost:3000", "https://statesets.com"])
     @PostMapping(value = "/sendMessage")
     @ApiOperation(value = "Send a message to the target party")
     fun sendMessage(@PathVariable nodeName: Optional<String>,
@@ -238,7 +240,7 @@ class CamilaController() {
 
     /** Returns a list of existing Agreements. */
 
-    @CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://camila.network", "localhost:8080", "localhost:3000", "https://statesets.com"])
+    @CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://camila.network", "http://localhost:8080", "http://localhost:3000", "https://statesets.com"])
     @GetMapping(value = "/getAgreements")
     @ApiOperation(value = "Get Agreements")
     fun getAgreements(@PathVariable nodeName: Optional<String>): List<Map<String, String>> {
@@ -248,7 +250,7 @@ class CamilaController() {
     }
 
 
-    @CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://camila.network", "localhost:8080", "localhost:3000", "https://statesets.com"])
+    @CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://camila.network", "http://localhost:8080", "http://localhost:3000", "https://statesets.com"])
     @GetMapping(value = "/getAllAgreements")
     @ApiOperation(value = "Get All Agreements")
     fun agreements(@PathVariable nodeName: Optional<String>): List<Agreement> {
@@ -280,7 +282,7 @@ class CamilaController() {
     /** Searchable PDF is mapped by agreement linearId **/
     /** Endpoint setup in BaaR OCR tool and State is created **/
 
-    @CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://camila.network", "localhost:8080", "localhost:3000", "https://statesets.com"])
+    @CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://camila.network", "http://localhost:8080", "http://localhost:3000", "https://statesets.com"])
     @PostMapping(value = "/createAgreement")
     @ApiOperation(value = "Create Agreement")
     fun createAgreement(@PathVariable nodeName: Optional<String>,
@@ -336,7 +338,7 @@ class CamilaController() {
 
     /** Activate Agreement. */
 
-    @CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://camila.network", "localhost:8080", "localhost:3000", "https://statesets.com"])
+    @CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://camila.network", "http://localhost:8080", "http://localhost:3000", "https://statesets.com"])
     @PostMapping(value = "/activateAgreement")
     @ApiOperation(value = "Activate Agreement")
     fun activateAgreement(@PathVariable nodeName: Optional<String>, @RequestParam("agreementNumber") agreementNumber: String, request: HttpServletRequest): ResponseEntity<Any?> {
@@ -360,7 +362,7 @@ class CamilaController() {
 
     /** Terminate Agreement. */
 
-    @CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://camila.network", "localhost:8080", "localhost:3000", "https://statesets.com"])
+    @CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://camila.network", "http://localhost:8080", "http://localhost:3000", "https://statesets.com"])
     @PostMapping(value = "/terminateAgreement")
     @ApiOperation(value = "Terminate Agreement")
     fun terminateAgreement(@PathVariable nodeName: Optional<String>, @RequestParam("agreementNumber") agreementNumber: String, request: HttpServletRequest): ResponseEntity<Any?> {
@@ -384,7 +386,7 @@ class CamilaController() {
 
     /** Renew Agreement. */
 
-    @CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://camila.network", "localhost:8080", "localhost:3000", "https://statesets.com"])
+    @CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://camila.network", "http://localhost:8080", "http://localhost:3000", "https://statesets.com"])
     @PostMapping(value = "/renewAgreement")
     @ApiOperation(value = "Renew Agreement")
     fun renweAgreement(@PathVariable nodeName: Optional<String>, @RequestParam("agreementNumber") agreementNumber: String, request: HttpServletRequest): ResponseEntity<Any?> {
@@ -408,7 +410,7 @@ class CamilaController() {
 
     /** Amend Agreement. */
 
-    @CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://camila.network", "localhost:8080", "localhost:3000", "https://statesets.com"])
+    @CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://camila.network", "http://localhost:8080", "http://localhost:3000", "https://statesets.com"])
     @PostMapping(value = "/amendAgreement")
     @ApiOperation(value = "Amend Agreement")
     fun amendAgreement(@PathVariable nodeName: Optional<String>, @RequestParam("agreementNumber") agreementNumber: String, request: HttpServletRequest): ResponseEntity<Any?> {
@@ -432,7 +434,7 @@ class CamilaController() {
 
     /** Upload the File. */
 
-    @CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://camila.network", "localhost:8080", "localhost:3000", "https://statesets.com"])
+    @CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://camila.network", "http://localhost:8080", "http://localhost:3000", "https://statesets.com"])
     @PostMapping(value = "/upload")
     @ApiOperation(value = "Upload Agreement")
     fun upload(@PathVariable nodeName: Optional<String>, @RequestParam file: MultipartFile, @RequestParam uploader: String): ResponseEntity<String> {
@@ -473,7 +475,7 @@ class CamilaController() {
 
     /** Download the File. */
 
-    @CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://camila.network", "localhost:8080", "localhost:3000", "https://statesets.com"])
+    @CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://camila.network", "http://localhost:8080", "http://localhost:3000", "https://statesets.com"])
     @GetMapping(value = "/download")
     @ApiOperation(value = "Download Agreement")
     fun downloadByName(@PathVariable nodeName: Optional<String>, @RequestParam name: String): ResponseEntity<InputStreamResource> {

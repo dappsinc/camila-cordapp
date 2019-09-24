@@ -40,12 +40,14 @@ git clone https://github.com/dappsinc/camila-cordapp
 
 ```
 
-2) Deploy the Nodes
+2) Build and Deploy the Nodes
 
 
 ```bash
 
-cd camila-cordapp && gradlew.bat deployNodes (Windows) OR ./gradlew deployNodes (Linux)
+cd camila-cordapp
+gradle clean build
+gradlew.bat deployNodes (Windows) OR ./gradlew deployNodes (Linux)
 
 ```
 

@@ -40,12 +40,14 @@ git clone https://github.com/dappsinc/camila-cordapp
 
 ```
 
-2) Deploy the Nodes
+2) Build and Deploy the Nodes
 
 
 ```bash
 
-cd camila-cordapp && gradlew.bat deployNodes (Windows) OR ./gradlew deployNodes (Linux)
+cd camila-cordapp
+gradle clean build
+gradlew.bat deployNodes (Windows) OR ./gradlew deployNodes (Linux)
 
 ```
 
@@ -53,7 +55,6 @@ cd camila-cordapp && gradlew.bat deployNodes (Windows) OR ./gradlew deployNodes 
 
 ```bash
 
-cd workflows
 cd build 
 cd nodes
 runnodes.bat (Windows) OR ./runnodes (Linux)
@@ -69,7 +70,7 @@ cd server
 ../gradlew.bat bootRun -x test (Windows) OR ../gradlew bootRun -x test
 
 ```
-The Camila CLM Network API Swagger will be running at http://localhost:8080/swagger-ui.html#/ in your browser
+The Camila CLM Network API Swagger UI will be running at http://localhost:8080/swagger-ui.html#/ in your browser
 
 To change the name of your `organisation` or any other parameters, edit the `node.conf` file and repeat the above steps.
 

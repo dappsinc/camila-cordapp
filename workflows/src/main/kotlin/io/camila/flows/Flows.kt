@@ -42,106 +42,117 @@ import java.util.*
 // * Activate Agreement Flow *
 // *********
 
-@InitiatingFlow
-@StartableByRPC
-class ActivateAgreementFlow(val agreementNumber: String) : FlowLogic<SignedTransaction>() {
+object ActivateFlow {
+    @InitiatingFlow
+    @StartableByRPC
+    class ActivateAgreementFlow(val agreementNumber: String) : FlowLogic<SignedTransaction>() {
 
-    override val progressTracker = ProgressTracker()
+        override val progressTracker = ProgressTracker()
 
-    @Suspendable
-    override fun call(): SignedTransaction {
-
-        val agreementStateAndRef = serviceHub.vaultService.queryBy<Agreement>().states.find {
-            it.state.data.agreementNumber == agreementNumber
-        } ?: throw IllegalArgumentException("No Agreement with ID $agreementNumber found.")
+        @Suspendable
+        override fun call(): SignedTransaction {
 
 
-        //   val agreementLineItemStateAndDef = serviceHub.vaultService.queryBy<AgreementLineItem>().states.find {
-        //       it.state.data.agreementNumber == agreementNumber
-        //    } ?: throw IllegalArgumentException("No Agreement Line Item associated to $agreementNumber found.")
+            // Retrieving the Agreement Input from the Vault
+            val agreementStateAndRef = serviceHub.vaultService.queryBy<Agreement>().states.find {
+                it.state.data.agreementNumber == agreementNumber
+            } ?: throw IllegalArgumentException("No Agreement with ID $agreementNumber found.")
 
 
-        val agreement = agreementStateAndRef.state.data
-        //    val agreementLineItem = agreementLineItemStateAndDef.state.data
-        val agreementStatus = AgreementStatus.INEFFECT
-        //   val agreementLineItemStatus = AgreementLineItemStatus.ACTIVATED
+            //   val agreementLineItemStateAndDef = serviceHub.vaultService.queryBy<AgreementLineItem>().states.find {
+            //       it.state.data.agreementNumber == agreementNumber
+            //    } ?: throw IllegalArgumentException("No Agreement Line Item associated to $agreementNumber found.")
 
 
-        // Creating the Activated Agreement output.
-
-        val activatedAgreement = Agreement(
-                agreement.agreementNumber,
-                agreement.agreementName,
-                agreement.agreementHash,
-                agreementStatus,
-                agreement.agreementType,
-                agreement.totalAgreementValue,
-                agreement.party,
-                agreement.counterparty,
-                agreement.agreementStartDate,
-                agreement.agreementEndDate,
-                agreement.active,
-                agreement.createdAt,
-                agreement.lastUpdated,
-                agreement.linearId)
+            val agreement = agreementStateAndRef.state.data
+            //    val agreementLineItem = agreementLineItemStateAndDef.state.data
+            val agreementStatus = AgreementStatus.INEFFECT
+            //   val agreementLineItemStatus = AgreementLineItemStatus.ACTIVATED
 
 
-        // Created the Activated Agreement Line Item output.
+            // Creating the Activated Agreement output.
+
+            val activatedAgreement = Agreement(
+                    agreement.agreementNumber,
+                    agreement.agreementName,
+                    agreement.agreementHash,
+                    agreementStatus,
+                    agreement.agreementType,
+                    agreement.totalAgreementValue,
+                    agreement.party,
+                    agreement.counterparty,
+                    agreement.agreementStartDate,
+                    agreement.agreementEndDate,
+                    agreement.active,
+                    agreement.createdAt,
+                    agreement.lastUpdated,
+                    agreement.linearId)
 
 
-        // val activatedAgreementLineItem = AgreementLineItem(
-        //        agreementLineItem.agreement,
-        //       agreementLineItem.agreementNumber,
-        //       agreementLineItem.agreementLineItemName,
-        //      agreementLineItemStatus,
-        //      agreementLineItem.agreementLineItemValue,
-        //      agreementLineItem.party,
-        //     agreementLineItem.counterparty,
-        //     agreementLineItem.lineItem,
-        //     agreementLineItem.active,
-        //     agreementLineItem.createdAt,
-        //     agreementLineItem.lastUpdated,
-        //     agreementLineItem.linearId
+            // Creating the command.
+            val requiredSigners = listOf(agreement.party.owningKey, agreement.counterparty.owningKey)
+            val command = Command(AgreementContract.Commands.ActivateAgreement(), requiredSigners)
 
-        //  )
-
-        // Building the transaction.
-        val notary = agreementStateAndRef.state.notary
-        val txBuilder = TransactionBuilder(notary)
-        txBuilder.addInputState(agreementStateAndRef)
-        // txBuilder.addInputState((agreementLineItemStateAndDef))
-        txBuilder.addOutputState(activatedAgreement, AgreementContract.AGREEMENT_CONTRACT_ID)
-        // txBuilder.addOutputState(activatedAgreementLineItem, AgreementLineItemContract.AGREEMENT_LINEITEM_CONTRACT_ID)
-        txBuilder.addCommand(AgreementContract.Commands.ActivateAgreement(), ourIdentity.owningKey)
-        // txBuilder.addCommand(AgreementLineItemContract.Commands.ActivateAgreementLineItem(), ourIdentity.owningKey)
-        txBuilder.verify(serviceHub)
-        // Sign the transaction.
-
-        val partSignedTx = serviceHub.signInitialTransaction(txBuilder)
+            // Created the Activated Agreement Line Item output.
 
 
-        val otherPartyFlow = initiateFlow(agreement.counterparty)
-        val fullySignedTx = subFlow(CollectSignaturesFlow(partSignedTx, setOf(otherPartyFlow)))
+            // val activatedAgreementLineItem = AgreementLineItem(
+            //        agreementLineItem.agreement,
+            //       agreementLineItem.agreementNumber,
+            //       agreementLineItem.agreementLineItemName,
+            //      agreementLineItemStatus,
+            //      agreementLineItem.agreementLineItemValue,
+            //      agreementLineItem.party,
+            //     agreementLineItem.counterparty,
+            //     agreementLineItem.lineItem,
+            //     agreementLineItem.active,
+            //     agreementLineItem.createdAt,
+            //     agreementLineItem.lastUpdated,
+            //     agreementLineItem.linearId
 
-        // Finalising the transaction.
-        return subFlow(FinalityFlow(fullySignedTx, listOf(otherPartyFlow)))
+            //  )
+
+            // Building the transaction.
+            val notary = agreementStateAndRef.state.notary
+            val txBuilder = TransactionBuilder(notary)
+            txBuilder.addInputState(agreementStateAndRef)
+            // txBuilder.addInputState((agreementLineItemStateAndDef))
+            txBuilder.addOutputState(activatedAgreement, AgreementContract.AGREEMENT_CONTRACT_ID)
+            // txBuilder.addOutputState(activatedAgreementLineItem, AgreementLineItemContract.AGREEMENT_LINEITEM_CONTRACT_ID)
+            txBuilder.addCommand(command)
+            // txBuilder.addCommand(AgreementLineItemContract.Commands.ActivateAgreementLineItem(), ourIdentity.owningKey)
+
+
+            // Sign the transaction.
+            val partSignedTx = serviceHub.signInitialTransaction(txBuilder)
+
+            // Gathering the counterparty's signgature
+            val counterparty = if (ourIdentity == agreement.party) agreement.counterparty else agreement.party
+            val counterpartySession = initiateFlow(counterparty)
+            val fullySignedTx = subFlow(CollectSignaturesFlow(partSignedTx, listOf(counterpartySession)))
+
+            // Finalising the transaction.
+            return subFlow(FinalityFlow(fullySignedTx, listOf(counterpartySession)))
+        }
     }
 
     @InitiatedBy(ActivateAgreementFlow::class)
-    class Acceptor(val otherPartySession: FlowSession) : FlowLogic<SignedTransaction>() {
+    class Acceptor(val counterpartySession: FlowSession) : FlowLogic<SignedTransaction>() {
         @Suspendable
         override fun call(): SignedTransaction {
-            val signTransactionFlow = object : SignTransactionFlow(otherPartySession) {
-                override fun checkTransaction(stx: SignedTransaction) = requireThat {
-                    val output = stx.tx.outputs.single().data
-                    "This must be an Agreement transaction." using (output is Agreement)
-                    val agreement = output as Agreement
-                    "The agreement status has to be Activated" using (agreement.agreementStatus == AgreementStatus.ACTIVATED)
+            val signTransactionFlow = object : SignTransactionFlow(counterpartySession) {
+                override fun checkTransaction(stx: SignedTransaction) {
+                    val ledgerTx = stx.toLedgerTransaction(serviceHub, false)
+                    val counterparty = ledgerTx.inputsOfType<Agreement>().single().counterparty
+                    if (counterparty != counterpartySession.counterparty) {
+                        throw FlowException("Only the counterparty can activate the Agreement")
+                    }
                 }
             }
 
-            val signedTransaction = subFlow(signTransactionFlow)
-            return subFlow(ReceiveFinalityFlow(otherSideSession = otherPartySession, expectedTxId = signedTransaction.id))
+            val txId = subFlow(signTransactionFlow).id
+
+            return subFlow(ReceiveFinalityFlow(counterpartySession, txId))
         }
     }
 }
@@ -151,92 +162,105 @@ class ActivateAgreementFlow(val agreementNumber: String) : FlowLogic<SignedTrans
 // * Renew Agreement Flow *
 // *********
 
-@InitiatingFlow
-@StartableByRPC
-class RenewAgreementFlow(val agreementNumber: String) : FlowLogic<SignedTransaction>() {
+object RenewFlow {
+    @InitiatingFlow
+    @StartableByRPC
+    class RenewAgreementFlow(val agreementNumber: String) : FlowLogic<SignedTransaction>() {
 
-    override val progressTracker = ProgressTracker()
+        override val progressTracker = ProgressTracker()
 
-    @Suspendable
-    override fun call(): SignedTransaction {
-
-        val agreementStateAndRef = serviceHub.vaultService.queryBy<Agreement>().states.find {
-            it.state.data.agreementNumber == agreementNumber
-        } ?: throw IllegalArgumentException("No agreement with ID $agreementNumber found.")
-
-
-        val agreement = agreementStateAndRef.state.data
-        val agreementStatus = AgreementStatus.RENEWED
-
-
-        // Creating the output.
-        val renewedAgreement = Agreement(
-                agreement.agreementNumber,
-                agreement.agreementName,
-                agreement.agreementHash,
-                agreementStatus,
-                agreement.agreementType,
-                agreement.totalAgreementValue,
-                agreement.party,
-                agreement.counterparty,
-                agreement.agreementStartDate,
-                agreement.agreementEndDate,
-                agreement.active,
-                agreement.createdAt,
-                agreement.lastUpdated,
-                agreement.linearId)
-
-        // Building the transaction.
-        val notary = agreementStateAndRef.state.notary
-        val txBuilder = TransactionBuilder(notary)
-        txBuilder.addInputState(agreementStateAndRef)
-        txBuilder.addOutputState(renewedAgreement, AgreementContract.AGREEMENT_CONTRACT_ID)
-        txBuilder.addCommand(AgreementContract.Commands.RenewAgreement(), ourIdentity.owningKey)
-        // Sign the transaction.
-
-        val partSignedTx = serviceHub.signInitialTransaction(txBuilder)
-
-
-        val otherPartyFlow = initiateFlow(agreement.counterparty)
-        val fullySignedTx = subFlow(CollectSignaturesFlow(partSignedTx, setOf(otherPartyFlow)))
-
-        // Finalising the transaction.
-        return subFlow(FinalityFlow(fullySignedTx, listOf(otherPartyFlow)))
-    }
-
-    @InitiatedBy(RenewAgreementFlow::class)
-    class Acceptor(val otherPartySession: FlowSession) : FlowLogic<SignedTransaction>() {
         @Suspendable
         override fun call(): SignedTransaction {
-            val signTransactionFlow = object : SignTransactionFlow(otherPartySession) {
-                override fun checkTransaction(stx: SignedTransaction) = requireThat {
-                    val output = stx.tx.outputs.single().data
-                    "This must be an Agreement transaction." using (output is Agreement)
-                    val agreement = output as Agreement
-                    "I won't accept Agreements with a value under 100." using (agreement.totalAgreementValue >= 100)
-                }
-            }
 
-            val signedTransaction = subFlow(signTransactionFlow)
-            return subFlow(ReceiveFinalityFlow(otherSideSession = otherPartySession, expectedTxId = signedTransaction.id))
+            // Retrieving the Agreement Input from the Vault
+            val agreementStateAndRef = serviceHub.vaultService.queryBy<Agreement>().states.find {
+                it.state.data.agreementNumber == agreementNumber
+            } ?: throw IllegalArgumentException("No agreement with ID $agreementNumber found.")
+
+
+            val agreement = agreementStateAndRef.state.data
+            val agreementStatus = AgreementStatus.RENEWED
+
+
+            // Creating the Renewal output.
+
+            val renewedAgreement = Agreement(
+                    agreement.agreementNumber,
+                    agreement.agreementName,
+                    agreement.agreementHash,
+                    agreementStatus,
+                    agreement.agreementType,
+                    agreement.totalAgreementValue,
+                    agreement.party,
+                    agreement.counterparty,
+                    agreement.agreementStartDate,
+                    agreement.agreementEndDate,
+                    agreement.active,
+                    agreement.createdAt,
+                    agreement.lastUpdated,
+                    agreement.linearId)
+
+            // Creating the command.
+            val requiredSigners = listOf(agreement.party.owningKey, agreement.counterparty.owningKey)
+            val command = Command(AgreementContract.Commands.RenewAgreement(), requiredSigners)
+
+            // Building the transaction.
+            val notary = agreementStateAndRef.state.notary
+            val txBuilder = TransactionBuilder(notary)
+            txBuilder.addInputState(agreementStateAndRef)
+            txBuilder.addOutputState(renewedAgreement, AgreementContract.AGREEMENT_CONTRACT_ID)
+            txBuilder.addCommand(command)
+
+            // Sign the transaction.
+            val partSignedTx = serviceHub.signInitialTransaction(txBuilder)
+
+            // Gathering the counterparty's signgature
+            val counterparty = if (ourIdentity == agreement.party) agreement.counterparty else agreement.party
+            val counterpartySession = initiateFlow(counterparty)
+            val fullySignedTx = subFlow(CollectSignaturesFlow(partSignedTx, listOf(counterpartySession)))
+
+            // Finalising the transaction.
+            return subFlow(FinalityFlow(fullySignedTx, listOf(counterpartySession)))
         }
     }
-}
 
+        @InitiatedBy(RenewAgreementFlow::class)
+        class Acceptor(val counterpartySession: FlowSession) : FlowLogic<SignedTransaction>() {
+            @Suspendable
+            override fun call(): SignedTransaction {
+                val signTransactionFlow = object : SignTransactionFlow(counterpartySession) {
+                    override fun checkTransaction(stx: SignedTransaction) {
+                        val ledgerTx = stx.toLedgerTransaction(serviceHub, false)
+                        val counterparty = ledgerTx.inputsOfType<Agreement>().single().counterparty
+                        if (counterparty != counterpartySession.counterparty) {
+                            throw FlowException("Only the counterparty can Renew the Agreement")
+                        }
+                    }
+                }
+
+                val txId = subFlow(signTransactionFlow).id
+
+                return subFlow(ReceiveFinalityFlow(counterpartySession, txId))
+            }
+        }
+    }
 
 // *********
 // * Amend Agreement Flow *
 // *********
 
-@InitiatingFlow
-@StartableByRPC
-class AmendAgreementFlow(val agreementNumber: String) : FlowLogic<SignedTransaction>() {
+object AmendFlow {
+    @InitiatingFlow
+    @StartableByRPC
+    class AmendAgreementFlow(val agreementNumber: String) : FlowLogic<SignedTransaction>() {
 
     override val progressTracker = ProgressTracker()
 
     @Suspendable
     override fun call(): SignedTransaction {
 
+
+        // Retrieving the Agreement Input from the Vault
         val agreementStateAndRef = serviceHub.vaultService.queryBy<Agreement>().states.find {
             it.state.data.agreementNumber == agreementNumber
         } ?: throw IllegalArgumentException("No agreement with ID $agreementNumber found.")
@@ -265,39 +289,48 @@ class AmendAgreementFlow(val agreementNumber: String) : FlowLogic<SignedTransact
                 agreement.lastUpdated,
                 agreement.linearId)
 
+        // Creating the command.
+        val requiredSigners = listOf(agreement.party.owningKey, agreement.counterparty.owningKey)
+        val command = Command(AgreementContract.Commands.AmendAgreement(), requiredSigners)
+
         // Building the transaction.
         val notary = agreementStateAndRef.state.notary
         val txBuilder = TransactionBuilder(notary)
         txBuilder.addInputState(agreementStateAndRef)
         txBuilder.addOutputState(amendedAgreement, AgreementContract.AGREEMENT_CONTRACT_ID)
-        txBuilder.addCommand(AgreementContract.Commands.AmendAgreement(), ourIdentity.owningKey)
-        // Sign the transaction.
+        txBuilder.addCommand(command)
 
+
+        // Sign the transaction.
         val partSignedTx = serviceHub.signInitialTransaction(txBuilder)
 
-
-        val otherPartyFlow = initiateFlow(agreement.counterparty)
-        val fullySignedTx = subFlow(CollectSignaturesFlow(partSignedTx, setOf(otherPartyFlow)))
+        // Gathering the counterparty's signgature
+        val counterparty = if (ourIdentity == agreement.party) agreement.counterparty else agreement.party
+        val counterpartySession = initiateFlow(counterparty)
+        val fullySignedTx = subFlow(CollectSignaturesFlow(partSignedTx, listOf(counterpartySession)))
 
         // Finalising the transaction.
-        return subFlow(FinalityFlow(fullySignedTx, listOf(otherPartyFlow)))
+        return subFlow(FinalityFlow(fullySignedTx, listOf(counterpartySession)))
+        }
     }
 
     @InitiatedBy(AmendAgreementFlow::class)
-    class Acceptor(val otherPartySession: FlowSession) : FlowLogic<SignedTransaction>() {
+    class Acceptor(val counterpartySession: FlowSession) : FlowLogic<SignedTransaction>() {
         @Suspendable
         override fun call(): SignedTransaction {
-            val signTransactionFlow = object : SignTransactionFlow(otherPartySession) {
-                override fun checkTransaction(stx: SignedTransaction) = requireThat {
-                    val output = stx.tx.outputs.single().data
-                    "This must be an Agreement transaction." using (output is Agreement)
-                    val agreement = output as Agreement
-                    "I won't accept Agreements with a value under 100." using (agreement.totalAgreementValue >= 100)
+            val signTransactionFlow = object : SignTransactionFlow(counterpartySession) {
+                override fun checkTransaction(stx: SignedTransaction) {
+                    val ledgerTx = stx.toLedgerTransaction(serviceHub, false)
+                    val counterparty = ledgerTx.inputsOfType<Agreement>().single().counterparty
+                    if (counterparty != counterpartySession.counterparty) {
+                        throw FlowException("Only the counterparty can Amend the Agreement")
+                    }
                 }
             }
 
-            val signedTransaction = subFlow(signTransactionFlow)
-            return subFlow(ReceiveFinalityFlow(otherSideSession = otherPartySession, expectedTxId = signedTransaction.id))
+            val txId = subFlow(signTransactionFlow).id
+
+            return subFlow(ReceiveFinalityFlow(counterpartySession, txId))
         }
     }
 }
@@ -307,6 +340,7 @@ class AmendAgreementFlow(val agreementNumber: String) : FlowLogic<SignedTransact
 // * Terminate Agreement Flow *
 // *********
 
+object TerminateFlow {
 @InitiatingFlow
 @StartableByRPC
 class TerminateAgreementFlow(val agreementNumber: String) : FlowLogic<SignedTransaction>() {
@@ -316,6 +350,7 @@ class TerminateAgreementFlow(val agreementNumber: String) : FlowLogic<SignedTran
     @Suspendable
     override fun call(): SignedTransaction {
 
+        // Retrieving the Agreement Input from the Vault
         val agreementStateAndRef = serviceHub.vaultService.queryBy<Agreement>().states.find {
             it.state.data.agreementNumber == agreementNumber
         } ?: throw IllegalArgumentException("No agreement with ID $agreementNumber found.")
@@ -342,39 +377,48 @@ class TerminateAgreementFlow(val agreementNumber: String) : FlowLogic<SignedTran
                 agreement.lastUpdated,
                 agreement.linearId)
 
+        // Creating the command.
+        val requiredSigners = listOf(agreement.party.owningKey, agreement.counterparty.owningKey)
+        val command = Command(AgreementContract.Commands.TerminateAgreement(), requiredSigners)
+
         // Building the transaction.
         val notary = agreementStateAndRef.state.notary
         val txBuilder = TransactionBuilder(notary)
         txBuilder.addInputState(agreementStateAndRef)
         txBuilder.addOutputState(terminatedAgreement, AgreementContract.AGREEMENT_CONTRACT_ID)
-        txBuilder.addCommand(AgreementContract.Commands.TerminateAgreement(), ourIdentity.owningKey)
-        // Sign the transaction.
+        txBuilder.addCommand(command)
 
+
+        // Sign the transaction.
         val partSignedTx = serviceHub.signInitialTransaction(txBuilder)
 
-
-        val otherPartyFlow = initiateFlow(agreement.counterparty)
-        val fullySignedTx = subFlow(CollectSignaturesFlow(partSignedTx, setOf(otherPartyFlow)))
+        // Gathering the counterparty's signgature
+        val counterparty = if (ourIdentity == agreement.party) agreement.counterparty else agreement.party
+        val counterpartySession = initiateFlow(counterparty)
+        val fullySignedTx = subFlow(CollectSignaturesFlow(partSignedTx, listOf(counterpartySession)))
 
         // Finalising the transaction.
-        return subFlow(FinalityFlow(fullySignedTx, listOf(otherPartyFlow)))
+        return subFlow(FinalityFlow(fullySignedTx, listOf(counterpartySession)))
     }
+}
 
     @InitiatedBy(TerminateAgreementFlow::class)
-    class Acceptor(val otherPartySession: FlowSession) : FlowLogic<SignedTransaction>() {
+    class Acceptor(val counterpartySession: FlowSession) : FlowLogic<SignedTransaction>() {
         @Suspendable
         override fun call(): SignedTransaction {
-            val signTransactionFlow = object : SignTransactionFlow(otherPartySession) {
-                override fun checkTransaction(stx: SignedTransaction) = requireThat {
-                    val output = stx.tx.outputs.single().data
-                    "This must be an Agreement transaction." using (output is Agreement)
-                    val agreement = output as Agreement
-                    "I won't accept Agreements with a value under 100." using (agreement.totalAgreementValue >= 100)
+            val signTransactionFlow = object : SignTransactionFlow(counterpartySession) {
+                override fun checkTransaction(stx: SignedTransaction) {
+                    val ledgerTx = stx.toLedgerTransaction(serviceHub, false)
+                    val counterparty = ledgerTx.inputsOfType<Agreement>().single().counterparty
+                    if (counterparty != counterpartySession.counterparty) {
+                        throw FlowException("Only the counterparty can Terminate the Agreement")
+                    }
                 }
             }
 
-            val signedTransaction = subFlow(signTransactionFlow)
-            return subFlow(ReceiveFinalityFlow(otherSideSession = otherPartySession, expectedTxId = signedTransaction.id))
+            val txId = subFlow(signTransactionFlow).id
+
+            return subFlow(ReceiveFinalityFlow(counterpartySession, txId))
         }
     }
 }
@@ -445,11 +489,14 @@ object CreateAgreementFlow {
             val formatted = time.format(formatter)
             val createdAt = formatted
             val lastUpdated = formatted
+            // val contactReference = serviceHub.vaultService.queryBy<Contract>(contact_id).state.single()
+            // val reference = contactReference.referenced()
             // val agreementState = Agreement(agreementNumber, agreementName, agreementStatus, agreementType, totalAgreementValue, serviceHub.myInfo.legalIdentities.first(), otherParty, agreementStartDate, agreementEndDate, agreementLineItem, attachmentId, active, createdAt, lastUpdated )
             val agreementState = Agreement(agreementNumber, agreementName, agreementHash, agreementStatus, agreementType, totalAgreementValue, me,  otherParty, agreementStartDate, agreementEndDate, active, createdAt, lastUpdated)
             val txCommand = Command(AgreementContract.Commands.CreateAgreement(), agreementState.participants.map { it.owningKey })
             progressTracker.currentStep = VERIFYING_TRANSACTION
             val txBuilder = TransactionBuilder(notary)
+            //        .addReferenceState(reference)
                     .addOutputState(agreementState, AGREEMENT_CONTRACT_ID)
                     .addCommand(txCommand)
             // .addOutputState(AttachmentContract.Attachment(attachmentId), ATTACHMENT_ID)

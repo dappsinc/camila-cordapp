@@ -80,7 +80,7 @@ class CamilaService(
         val proxy = this.nodeRpcConnection.proxy
 
         // Start the flow, block and wait for the response.
-        return proxy.startFlowDynamic(ActivateAgreementFlow::class.java, agreementNumber).returnValue.getOrThrow()
+        return proxy.startFlowDynamic(ActivateFlow.ActivateAgreementFlow::class.java, agreementNumber).returnValue.getOrThrow()
     }
 
 
@@ -89,7 +89,7 @@ class CamilaService(
         val proxy = this.nodeRpcConnection.proxy
 
         // Start the flow, block and wait for the response.
-        return proxy.startFlowDynamic(RenewAgreementFlow::class.java, agreementNumber).returnValue.getOrThrow()
+        return proxy.startFlowDynamic(RenewFlow.RenewAgreementFlow::class.java, agreementNumber).returnValue.getOrThrow()
     }
 
 
@@ -98,7 +98,7 @@ class CamilaService(
         val proxy = this.nodeRpcConnection.proxy
 
         // Start the flow, block and wait for the response.
-        return proxy.startFlowDynamic(AmendAgreementFlow::class.java, agreementNumber).returnValue.getOrThrow()
+        return proxy.startFlowDynamic(AmendFlow.AmendAgreementFlow::class.java, agreementNumber).returnValue.getOrThrow()
     }
 
 
@@ -107,7 +107,7 @@ class CamilaService(
         val proxy = this.nodeRpcConnection.proxy
 
         // Start the flow, block and wait for the response.
-        return proxy.startFlowDynamic(TerminateAgreementFlow::class.java, agreementNumber).returnValue.getOrThrow()
+        return proxy.startFlowDynamic(TerminateFlow.TerminateAgreementFlow::class.java, agreementNumber).returnValue.getOrThrow()
     }
 
 

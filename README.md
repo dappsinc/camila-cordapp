@@ -1,6 +1,6 @@
 # Camila CLM CorDapp
 
-Camila is a Contract Lifecycle Management (CLM) network for inter-firm process automation.
+Camila is a Contract Lifecycle Management (CLM) network for inter-firm process automation. Camila is an open source CorDapp, built on Corda.
 
 ```
 	   8 Node Network Graph | 28 Edges | 1 Notary

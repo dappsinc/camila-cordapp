@@ -575,6 +575,7 @@ class SendMessage(private val to: Party, private val userId: String, private val
     override fun call() {
         val stx: SignedTransaction = createMessageStx()
         val otherPartySession = initiateFlow(to)
+        progressTracker.nextStep()
         subFlow(FinalityFlow(stx, setOf(otherPartySession), FINALISING_TRANSACTION.childProgressTracker()))
     }
 
@@ -592,35 +593,25 @@ class SendMessage(private val to: Party, private val userId: String, private val
         val messageNumber = 100.toString()
         txb.addOutputState(Chat.Message(UniqueIdentifier(), body, fromUserId, to, me, userId, sent, delivered, fromMe, formatted, messageNumber), Chat::class.qualifiedName!!)
         txb.addCommand(Chat.SendMessageCommand, me.owningKey)
-        txb.verify(serviceHub)
-        // Sign the transaction.
-        progressTracker.currentStep = SIGNING_TRANSACTION
-        val partSignedTx = serviceHub.signInitialTransaction(txb)
-
-
-        val otherPartyFlow = initiateFlow(to)
-        val fullySignedTx = subFlow(CollectSignaturesFlow(partSignedTx, setOf(otherPartyFlow), GATHERING_SIGS.childProgressTracker()))
-
-        // Finalising the transaction.
-        return subFlow(FinalityFlow(fullySignedTx, listOf(otherPartyFlow), FINALISING_TRANSACTION.childProgressTracker()))
+        return serviceHub.signInitialTransaction(txb)
     }
 
     @InitiatedBy(SendMessage::class)
-    class SendChatResponder(val otherPartyFlow: FlowSession) : FlowLogic<SignedTransaction>() {
+    class SendChatResponder(val otherPartySession: FlowSession) : FlowLogic<SignedTransaction>() {
         @Suspendable
         override fun call(): SignedTransaction {
-            val stx = subFlow(object : SignTransactionFlow(otherPartyFlow) {
+            val stx = subFlow(object : SignTransactionFlow(otherPartySession) {
                 override fun checkTransaction(stx: SignedTransaction) {
                     val message = stx.coreTransaction.outputsOfType<Chat.Message>().single()
                     require(message.from != ourIdentity) {
                         "The sender of the new message cannot have my identity when I am not the creator of the transaction"
                     }
-                    require(message.from == otherPartyFlow.counterparty) {
+                    require(message.from == otherPartySession.counterparty) {
                         "The sender of the reply must must be the party creating this transaction"
                     }
                 }
             })
-            return subFlow(ReceiveFinalityFlow(otherSideSession = otherPartyFlow, expectedTxId = stx.id))
+            return subFlow(ReceiveFinalityFlow(otherSideSession = otherPartySession, expectedTxId = stx.id))
         }
     }
 

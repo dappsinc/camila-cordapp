@@ -39,14 +39,14 @@ class Chat : Contract {
         val signers: List<PublicKey> = tx.commandsOfType<SendMessageCommand>().single().signers
         val message: Message = tx.outputsOfType<Message>().single()
         requireThat {
-            "Only one output state should be created when replying to a message." using (tx.outputs.size == 1)
-            val output = tx.outputsOfType<Message>().single()
-            val input = tx.inputsOfType<Message>().single()
-            "Only the original message's recipient can reply to the message" using (output.from == input.to)
-            "The reply must be sent to the original sender" using (output.to == input.from)
+            // "Only one output state should be created when replying to a message." using (tx.outputs.size == 1)
+            // val output = tx.outputsOfType<Message>().single()
+            // val input = tx.inputsOfType<Message>().single()
+            // "Only the original message's recipient can reply to the message" using (output.from == input.to)
+            // "The reply must be sent to the original sender" using (output.to == input.from)
             // covered by the general requirements
-            "The original sender must be included in the required signers" using signers.contains(input.from.owningKey)
-            "The original recipient must be included in the required signers" using signers.contains(input.to.owningKey)
+            // "The original sender must be included in the required signers" using signers.contains(input.from.owningKey)
+            // "The original recipient must be included in the required signers" using signers.contains(input.to.owningKey)
         }
     }
 

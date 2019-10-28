@@ -36,6 +36,8 @@ buildscript {
         maven { url 'https://ci-artifactory.corda.r3cev.com/artifactory/corda' }
         maven { url 'https://ci-artifactory.corda.r3cev.com/artifactory/corda-lib' }
         maven { url 'https://ci-artifactory.corda.r3cev.com/artifactory/corda-lib-dev' }
+        maven { url 'https://jitpack.io' }
+        maven { url "https://repo.gradle.org/gradle/libs-releases-local" }
     }
 
     dependencies {
@@ -112,6 +114,7 @@ dependencies {
     // cordapp "$tokens_release_group:tokens-contracts:$tokens_release_version"
     // cordapp "$tokens_release_group:tokens-workflows:$tokens_release_version"
     // cordapp "$tokens_release_group:tokens-money:$tokens_release_version"
+    // cordapp "$tokens_release_group:tokens-selection:$tokens_release_version"
 
     // For logging.
     cordaCompile "org.apache.logging.log4j:log4j-slf4j-impl:${log4j_version}"
@@ -135,7 +138,11 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
         projectCordapp {
             deploy = false
         }
-        cordapp project(':contracts')
+        // cordapp("$tokens_release_group:tokens-contracts:$tokens_release_version")
+        // cordapp("$tokens_release_group:tokens-workflows:$tokens_release_version")
+        // cordapp("$tokens_release_group:tokens-money:$tokens_release_version")
+        // cordapp("$tokens_release_group:tokens-selection:$tokens_release_version")
+        cordapp project(":contracts")
         cordapp project(":workflows")
     }
     node {
@@ -158,15 +165,20 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
         }
         cordapps = []
         rpcUsers = [[ user: "user1", "password": "test", "permissions": ["ALL"]]]
-        //extraConfig = [
-        //'dataSourceProperties.dataSourceClassName' : 'org.postgresql.ds.PGSimpleDataSource',
-        //'dataSourceProperties.dataSource.url' : 'jdbc:postgresql://google/postgres?cloudSqlInstance=statesets-28:asia-south1:hasura-postgres&socketFactory=com.google.cloud.sql.postgres.SocketFactory&user=dom&password=password',
-        //'dataSourceProperties.dataSource.password' : 'password',
-        //        'dataSourceProperties.dataSource.user' : 'dom',
-        //'database.transactionIsolationLevel' : 'READ_COMMITTED']
-        // drivers = ['C/Users/domst/Documents/projects/driver/postgresql-42.1.4.jar']
+        extraConfig = [
+                        'dataSourceProperties' : [
+                                'dataSourceClassName' : 'org.postgresql.ds.PGSimpleDataSource',
+                                'dataSource.url' : 'jdbc:postgresql://backend-4a4ayi0z.nhost.io:5433/postgres?sslmode=require&currentSchema=statesets',
+                                'dataSource.password' : 'password',
+                                'dataSource.user' : 'domsteil'
+                        ],
+                        'database': [
+                                'transactionIsolationLevel' : 'READ_COMMITTED'
+                                ],
+                        'jarDirs': [ "/Users/domst/Documents/projects/driver" ]
+                ]
         webPort 8080
-        extraConfig = ['h2Settings.address' : 'localhost:12347']
+        // extraConfig = ['h2Settings.address' : 'localhost:12347']
         webserverJar = "${rootProject.projectDir}/server/build/libs/server-${project.version}.jar"
     }
     node {
@@ -179,18 +191,20 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
         // Uncomment the following two lines to automatically launch a separate Spring Boot webserver per node
         //webPort 10010
         //webserverJar = "${rootProject.projectDir}/server/build/libs/server-${project.version}.jar"
-        //cordapps = []
-        //    extraConfig = [
-        //            dataSourceProperties : [
-        //                    dataSourceClassName : "org.postgresql.ds.PGSimpleDataSource",
-        //                    'dataSource.url' : "postgresql://postgres:b6e5a72a9a7da6246546289eb9eb09c1@backend-c4j2k58t.nhost.io:5701/postgres?sslmode=require" // var envVar: String = System.getenv("varname") ?: "default_value"
-        //           ],
-        //
-        //            database: [
-        //                    transactionIsolationLevel : "READ_COMMITTED"
-        //           ]
-        //    ]
-        extraConfig = ['h2Settings.address' : 'localhost:12345']
+        cordapps = []
+        extraConfig = [
+                'dataSourceProperties' : [
+                        'dataSourceClassName' : 'org.postgresql.ds.PGSimpleDataSource',
+                        'dataSource.url' : 'jdbc:postgresql://backend-k66fehr3.nhost.io:5434/postgres?sslmode=require&currentSchema=statesets',
+                        'dataSource.password' : 'password',
+                        'dataSource.user' : 'domsteil'
+                ],
+                'database': [
+                        'transactionIsolationLevel' : 'READ_COMMITTED'
+                ],
+                'jarDirs': [ "/Users/domst/Documents/projects/driver" ]
+        ]
+        //extraConfig = ['h2Settings.address' : 'localhost:12345']
         rpcUsers = [[ user: "user1", "password": "test", "permissions": ["ALL"]]]
     }
     node {
@@ -204,16 +218,6 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
         //webPort 10010
         //webserverJar = "${rootProject.projectDir}/server/build/libs/server-${project.version}.jar"
         //cordapps = []
-        //   extraConfig = [
-        ///            dataSourceProperties : [
-        //                    dataSourceClassName : "org.postgresql.ds.PGSimpleDataSource",
-        //                    'dataSource.url' : "postgresql://postgres:c4f6eedf6959f7b4c06228388e718f40@backend-6gds2aun.nhost.io:5702/postgres?sslmode=require" // var envVar: String = System.getenv("varname") ?: "default_value"
-        //            ],
-        //
-        //            database: [
-        //                   transactionIsolationLevel : "READ_COMMITTED"
-        //            ]
-        //    ]
         extraConfig = ['h2Settings.address' : 'localhost:12346']
         rpcUsers = [[ user: "user1", "password": "test", "permissions": ["ALL"]]]
     }

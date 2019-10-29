@@ -517,6 +517,54 @@ class CamilaController() {
 
 
 
+    @CrossOrigin(origins = ["https://dapps.ngrok.io", "https://dsoa.network", "https://camila.network", "http://localhost:8080", "http://localhost:3000", "https://statesets.com", "https://na57.lightning.force.com"])
+    @PostMapping(value = "/createInvoice")
+    @ApiOperation(value = "Create Invoice")
+    fun createInvoice(@PathVariable nodeName: Optional<String>,
+                        @RequestParam("invoiceNumber") invoiceNumber: String,
+                        @RequestParam("invoiceName") invoiceName: String,
+                        @RequestParam("billingReason") billingReason: String,
+                        @RequestParam("amountDue") amountDue: Int,
+                        @RequestParam("amountPaid") amountPaid: Int,
+                        @RequestParam("amountRemaining") amountRemaining: Int,
+                        @RequestParam("periodStartDate") periodStartDate: String,
+                        @RequestParam("periodEndDate") periodEndDate: String,
+                        @RequestParam("counterpartyName") counterpartyName: String?): ResponseEntity<Any?> {
+
+
+        if (nodeName == null) {
+            return ResponseEntity.status(TSResponse.BAD_REQUEST).body("Query parameter 'counterPartyName' missing or has wrong format.\n")
+        }
+
+
+        if (counterpartyName == null) {
+            return ResponseEntity.status(TSResponse.BAD_REQUEST).body("Query parameter 'counterPartyName' missing or has wrong format.\n")
+        }
+
+
+
+        val (status, message) = try {
+
+            val result = getService(nodeName).createInvoice(invoiceNumber, invoiceName, billingReason, amountDue, amountPaid, amountRemaining, periodStartDate, periodEndDate, counterpartyName)
+
+            HttpStatus.CREATED to mapOf<String, String>(
+                    "invoiceNumber" to "$invoiceNumber",
+                    "party" to "$nodeName",
+                    "counterpartyName" to "$counterpartyName"
+            )
+
+        } catch (e: Exception) {
+            logger.error("Error sending Invoice to ${counterpartyName}", e)
+            e.printStackTrace()
+            HttpStatus.BAD_REQUEST to e.message
+        }
+        return ResponseEntity<Any?>(message, status)
+    }
+
+
+
+
+
 
 
 

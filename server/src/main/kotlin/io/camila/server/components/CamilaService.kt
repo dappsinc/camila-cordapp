@@ -21,6 +21,7 @@ import com.github.manosbatsis.corbeans.spring.boot.corda.service.CordaNodeServic
 import io.camila.*
 import io.camila.agreement.AgreementStatus
 import io.camila.agreement.AgreementType
+import io.camila.flows.CreateInvoiceFlow
 import net.corda.core.flows.FlowLogic
 import net.corda.core.identity.Party
 import net.corda.core.transactions.SignedTransaction
@@ -108,6 +109,25 @@ class CamilaService(
 
         // Start the flow, block and wait for the response.
         return proxy.startFlowDynamic(TerminateFlow.TerminateAgreementFlow::class.java, agreementNumber).returnValue.getOrThrow()
+    }
+
+
+    /** Create an Invoice! */
+    fun createInvoice(invoiceNumber: String, invoiceName: String, billingReason: String, amountDue: Int, amountPaid: Int, amountRemaining:Int, periodStartDate:String, periodEndDate:String, counterpartyName: String): SignedTransaction {
+        val proxy = this.nodeRpcConnection.proxy
+
+        val matches = proxy.partiesFromName(counterpartyName, exactMatch = true)
+        logger.debug("createInvoice, peers: {}", this.peers())
+        logger.debug("createInvoice, peer names: {}", this.peerNames())
+        logger.debug("createInvoice, target: {}, matches: {}", counterpartyName, matches)
+
+        val counterpartyName: Party = when {
+            matches.isEmpty() -> throw IllegalArgumentException("Target string \"$counterpartyName\" doesn't match any nodes on the network.")
+            matches.size > 1 -> throw IllegalArgumentException("Target string \"$counterpartyName\"  matches multiple nodes on the network.")
+            else -> matches.single()
+        }
+        // Start the flow, block and wait for the response.
+        return proxy.startFlowDynamic(CreateInvoiceFlow.Invoicer::class.java, invoiceNumber, invoiceName, billingReason, amountDue, amountPaid, amountRemaining, periodStartDate, periodEndDate, counterpartyName).returnValue.getOrThrow()
     }
 
 

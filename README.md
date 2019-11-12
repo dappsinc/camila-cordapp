@@ -219,6 +219,37 @@ data class AgreementLineItem (val agreement: Agreement,
 
 ```
 
+#### Invoices
+
+```
+data class Invoice(val invoiceNumber: String,
+                   val invoiceName: String,
+                   val billingReason: String,
+                   val amountDue: Amount<Currency>,
+                   val amountPaid: Amount<Currency> = Amount(0, amountDue.token),
+                   val amountRemaining: Amount<Currency> = Amount(0, amountPaid.token),
+                   val subtotal: Amount<Currency> = Amount(0, amountDue.token),
+                   val total: Amount<Currency> = Amount(0, subtotal.token),
+                   val party: Party,
+                   val counterparty: Party,
+                   val dueDate: String,
+                   val periodStartDate: String,
+                   val periodEndDate: String,
+                   val paid: Boolean?,
+                   val active: Boolean?,
+                   val createdAt: String?,
+                   val lastUpdated: String?,
+                   override val linearId: UniqueIdentifier = UniqueIdentifier()) : ContractState, LinearState, QueryableState 
+
+```
+
+The Invoice has the following business `flows` that can be called:
+
+- `CreateInvoice` - Create an Invoice between your organization and a known counterparty
+- `PayInvoice` - Pay the Invoice between your organization and a counterparty
+- `FactorInvoice` - Factor a the invoice and generate a loan
+
+
 ### Transaction Flow 
 
  ``` 

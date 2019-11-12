@@ -246,8 +246,8 @@ data class Invoice(val invoiceNumber: String,
 The Invoice has the following business `flows` that can be called:
 
 - `CreateInvoice` - Create an Invoice between your organization and a known counterparty
-- `PayInvoicet` - Pay the Invoice between your organization and a counterparty
-- `Factor Invoice` - Factor a the invoice and generate a loan
+- `PayInvoice` - Pay the Invoice between your organization and a counterparty
+- `FactorInvoice` - Factor a the invoice and generate a loan
 
 
 ### Transaction Flow 

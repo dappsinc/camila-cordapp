@@ -38,11 +38,11 @@ import java.util.*
 data class Invoice(val invoiceNumber: String,
                    val invoiceName: String,
                    val billingReason: String,
-                   val amountDue: Int,
-                   val amountPaid: Int,
-                   val amountRemaining: Int,
-                   val subtotal: Int,
-                   val total: Int,
+                   val amountDue: Amount<Currency>,
+                   val amountPaid: Amount<Currency> = Amount(0, amountDue.token),
+                   val amountRemaining: Amount<Currency> = Amount(0, amountPaid.token),
+                   val subtotal: Amount<Currency> = Amount(0, amountDue.token),
+                   val total: Amount<Currency> = Amount(0, subtotal.token),
                    val party: Party,
                    val counterparty: Party,
                    val dueDate: String,
@@ -55,6 +55,7 @@ data class Invoice(val invoiceNumber: String,
                    override val linearId: UniqueIdentifier = UniqueIdentifier()) : ContractState, LinearState, QueryableState {
 
     override val participants: List<AbstractParty> get() = listOf(party, counterparty)
+    fun pay(amountToPay: Amount<Currency>) = copy(amountDue = amountDue + amountToPay)
 
     override fun toString(): String {
         val partyString = (party as? Party)?.name?.organisation ?: party.owningKey.toBase58String()
@@ -108,7 +109,8 @@ class InvoiceContract : Contract {
     interface Commands : CommandData {
 
         class CreateInvoice : TypeOnlyCommandData(), Commands
-        class PayInvoice : TypeOnlyCommandData(),Commands
+        class PayInvoice : TypeOnlyCommandData(), Commands
+        class FactorInvoice : TypeOnlyCommandData(), Commands
 
 
     }
@@ -129,7 +131,7 @@ class InvoiceContract : Contract {
 
                 val invoiceOutput = invoiceOutputs.single()
                 "the party should be different to the counterparty" using (invoiceOutput.party != invoiceOutput.counterparty)
-                "the total should be greater than 0" using (invoiceOutput.total > 0)
+                //"the total should be greater than 0" using (invoiceOutput.total)
 
                 "the party and counterparty are required signers" using
                         (invoiceCommand.signers.containsAll(listOf(invoiceOutput.party.owningKey, invoiceOutput.counterparty.owningKey)))
@@ -137,6 +139,16 @@ class InvoiceContract : Contract {
 
 
             is Commands.PayInvoice -> requireThat {
+                "one input should be produced" using (invoiceInputs.size == 1)
+                "one output should be produced" using (invoiceOutputs.size == 1)
+
+                val invoiceInput = invoiceInputs.single()
+                val invoiceOutput = invoiceOutputs.single()
+
+                "the output paid should be TRUE" using (invoiceOutput.paid == TRUE)
+            }
+
+            is Commands.FactorInvoice -> requireThat {
                 "one input should be produced" using (invoiceInputs.size == 1)
                 "one output should be produced" using (invoiceOutputs.size == 1)
 
